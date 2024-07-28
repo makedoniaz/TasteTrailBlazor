@@ -1,1 +1,2 @@
 # TasteTrailBlazor
+TasteTrail Blazor is the client-side part of the TasteTrail application, developed using Blazor WebAssembly (Blazor WASM). This project provides an interactive user interface that interacts with the TasteTrail API to display and manage data.
