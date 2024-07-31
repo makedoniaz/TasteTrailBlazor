@@ -1,39 +1,66 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TasteTrailBlazor</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿<header class="header">
+    <nav>
+        <div class="nav_header">
+            <div class="nav_logo">
+                <a href="/">
+                    <img src="../Assets/logo-dark.png" alt="logo" class="nav_logo-dark" />
+                </a>
+            </div>
+            <div class="nav_menu_btn" id="menu-btn">
+                <i class="ri-menu-line"></i>
+            </div>
+        </div>
+        <ul class="nav_links" id="nav-links">
+            <li> <a class="nav-links" href="/">Home</a> </li>
+            <li><a class="nav-links" href="#special">Special</a></li>
+            <li><a class="nav-links" href="#menu">Menu</a></li>
+            <li><a class="nav-links" href="#contact">Contact Us</a></li>
+            @if (IsAdmin)
+            {
+                <li><a class="nav-links">Dashboard</a></li>
+            }
+            <li class="nav-links dropdown">
+                <a class="nav-links dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">Services</a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li class="nav-links">
+                        <a class="nav-link">Venue Page</a>
+                    </li>
+                    <li class="nav-links">
+                        <a class="nav-link">Menu Page</a>
+                    </li>
+                    <li class="nav-links">
+                        <a class="nav-link">Menu Item Page</a>
+                    </li>
+                </ul>
+            </li>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+            @if (IsAuthenticated)
+            {
+                <li class="nav-links dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false"> Hello, @Name
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item">Account</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li> <a class="dropdown-item">Log Out</a></li>
+                    </ul>
+                </li>
+            }
+            else
+            {
+                <li><i class="fa fa-solid fa-user mr-2"></i><a class="nav-links"> Sign Up</a></li>
+            }
+
+        </ul>
+    </nav> 
+</header>
 
 @code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
+    private bool IsAuthenticated = false;
+    private bool IsAdmin = false;
+    private string Name = "UserName";
 }
