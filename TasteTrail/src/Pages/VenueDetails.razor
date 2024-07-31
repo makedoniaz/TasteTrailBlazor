@@ -1,0 +1,287 @@
+﻿@page "/Venue/{Id:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Venue Details</PageTitle>
+
+@code {
+    public class User
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+    }
+    public class Venue
+{
+    public int Id { get; set; }
+    
+    public string? Name { get; set; }
+
+    public string? Address { get; set; }
+
+    public string? Description { get; set; }
+
+    public string? ContactNumber { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? LogoUrlPath { get; set; }
+
+    public float AveragePrice { get; set; }
+
+    public float OverallRating { get; set; }
+
+    public List<Menu> Menus { get; set; }
+
+    public List<Feedback> Feedbacks { get; set; }
+
+    public string? UserId { get; set; }
+
+    public User? User { get; set; }
+}
+
+
+    public class Feedback
+    {
+        public int Id { get; set; }
+        public string? Text { get; set; }
+        public int Rating { get; set; }
+        public DateTime CreationDate { get; set; }
+        public string? UserId { get; set; }
+        public User? User { get; set; }
+        public int VenueId { get; set; }
+        public Venue? Venue { get; set; }
+    }
+
+    public class MenuItem
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public float Price { get; set; }
+        public int PopularityRate { get; set; }
+        public int? MenuId { get; set; }
+        public Menu Menu { get; set; }
+    }
+
+    public class Menu
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public int VenueId { get; set; }
+        public Venue? Venue { get; set; }
+        public List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+    }
+
+    public class VenueViewModel
+    {
+        public Venue? Venue { get; set; }
+        public List<Menu>? Menus { get; set; } = new List<Menu>();
+        public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
+    }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private VenueViewModel Model = new VenueViewModel();
+    private bool IsAdmin = false;
+    @* private string path => Model.Venue?.LogoUrlPath == null ? "../images/not-available.jpg" : "../" + Model.Venue.LogoUrlPath; *@
+private string path = "";
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVenueDetailsAsync();
+    }
+
+    private async Task LoadVenueDetailsAsync()
+    {
+        // Fetch the venue details based on Id
+        // Example URL might be "/api/venue/{Id}"
+        @* Model = await Http.GetFromJsonAsync<VenueViewModel>($"api/venue/{Id}"); *@
+    }
+
+    private async Task DeleteMenuAsync(int id)
+    {
+        @* if (confirm('Are you sure you want to delete this menu?')) {
+            var response = await Http.DeleteAsync($"api/menu/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                // Reload the venue details to reflect changes
+                await LoadVenueDetailsAsync();
+            }
+            else
+            {
+                // Handle error
+                await alert("Failed to delete menu.");
+            }
+        } *@
+    }
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Slideshow -->
+            <div id="photoSlideshow" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="@path" class="d-block w-100" alt="Venue Photo">
+                    </div>
+                    <!-- Add more carousel items if necessary -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <h1 class="mb-3">@Model?.Venue.Name</h1>
+            <!-- Rating -->
+            <div class="rating" data-rating="@Model?.Venue.OverallRating">
+                <span class="text-warning">
+                    @for (var i = 0; i < (Model?.Venue.OverallRating); i++)
+                    {
+                        <i class="fas fa-star star"></i>
+                    }
+                    @if (Model?.Venue.OverallRating < 5)
+                    {
+                        for (var j = (Model?.Venue.OverallRating); j < 5; j++)
+                        {
+                            <i class="far fa-star star"></i>
+                        }
+                    }
+                </span>
+                <span class="badge bg-secondary ms-2">@Model.Venue.OverallRating</span>
+            </div>
+            <!-- Description -->
+            <p class="mt-3"><strong>Description: </strong>@Model?.Venue.Description</p>
+            <p class="mt-3"><strong>Email: </strong>@Model?.Venue.Email</p>
+            <p class="mt-3"><strong>Address: </strong>@Model?.Venue.Address</p>
+            <p class="mt-3"><strong>Contact Number: </strong>@Model?.Venue.ContactNumber</p>
+            <p class="mt-3"><strong>Average Price: </strong>@Model?.Venue.AveragePrice</p>
+
+            @if (IsAdmin)
+            {
+                <a href="CreateMenuPage/@Model.Venue?.Id" class="btn btn-primary w-25 mt-5 mb-3">Create new Menu</a>
+            }
+        </div>
+    </div>
+    <div class="row">
+        @foreach (var menu in Model?.Menus)
+        {
+            <div class="col-md-3 restaurantItem mb-4">
+                <div class="card mb-4 h-100 w-100">
+                    <div class="card-body">
+                        <h5 class="card-title m-2">@menu.Name</h5>
+                        <p class="card-text m-2">@menu.Description</p>
+                        <div class="venue-actions m-1">
+                            <a href="/Menu/MenuDetails/@menu.Id" class="btn btn-primary m-1">Menu Details</a>
+                            @if (IsAdmin)
+                            {
+                                <button class="delete-btn btn-danger m-1" onclick="DeleteMenu(menu.Id)">Delete</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Location Section -->
+    <div class="mt-5">
+        <h2>Location</h2>
+        <div id="map" style="height: 300px;"></div>
+    </div>
+</div>
+
+<style>
+    button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #4cae4c;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Rating handling code
+        const stars = $('.rating .star');
+
+        stars.on('click', function () {
+            const value = parseInt($(this).data('value'));
+            const container = $(this).closest('.rating');
+            const restaurantRatingElement = container.find('.badge');
+            const restaurantRating = parseFloat(container.data('rating'));
+
+            stars.removeClass('fas fa-star fa-star-half-alt far');
+
+            for (let i = 0; i < value; i++) {
+                stars.eq(i).addClass('fas fa-star');
+            }
+
+            if (value > restaurantRating) {
+                stars.eq(value - 1).addClass('fa-star-half-alt');
+            } else if (value < restaurantRating) {
+                stars.eq(value).addClass('far fa-star');
+            }
+
+            container.data('rating', value);
+            restaurantRatingElement.text(value.toFixed(1));
+        });
+
+        $('#addFeedbackBtn').on('click', function () {
+            const isAlreadyOpen = $('#commentFormSection').is(':visible');
+            if (!isAlreadyOpen) {
+                $('#commentName').val("");
+                $('#commentRating').val("");
+                $('#commentMessage').val("");
+                $('#commentFormSection').slideDown();
+                $('html, body').animate({ scrollTop: $('#commentFormSection').offset().top }, 500);
+            } else {
+                $('#commentFormSection').slideUp();
+            }
+        });
+
+        $('#commentForm').on('submit', function (e) {
+            e.preventDefault();
+            // Implement form submission logic
+        });
+
+        $(document).on('click', '.edit-feedback', function () {
+            const feedbackItem = $(this).closest('.list-group-item');
+            const commentName = feedbackItem.find('h5').text();
+            const commentRating = feedbackItem.find('.rating').data('rating');
+            const commentMessage = feedbackItem.find('p.mb-1').text();
+
+            const isAlreadyOpen = $('#commentFormSection').is(':visible');
+
+            if (!isAlreadyOpen || $('#commentName').val() !== commentName) {
+                $('#commentName').val(commentName);
+                $('#commentRating').val(commentRating);
+                $('#commentMessage').val(commentMessage);
+                $('#commentFormSection').slideDown();
+                $('html, body').animate({ scrollTop: $('#commentFormSection').offset().top }, 500);
+            } else {
+                $('#commentFormSection').slideUp();
+            }
+        });
+
+        var map = L.map('map').setView([40.3820624, 49.877007], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        L.marker([40.3820624, 49.877007]).addTo(map)
+            .bindPopup("<b>Location</b><br>Address").openPopup();
+    });
+</script>

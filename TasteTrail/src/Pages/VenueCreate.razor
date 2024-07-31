@@ -1,0 +1,147 @@
+﻿@page "/Venue/Create"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Create Venue</PageTitle>
+
+@code {
+    private class VenueClass
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? Description { get; set; }
+        public string? ContactNumber { get; set; }
+        public string? Email { get; set; }
+        public string? LogoUrlPath { get; set; }
+        public float AveragePrice { get; set; }
+        public float OverallRating { get; set; }
+    }
+
+    private VenueClass NewVenue = new VenueClass();
+    private bool IsAdmin = true; 
+    private string? FileName = "Upload Logo";
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            using (var stream = file.OpenReadStream())
+            {
+                // Logic to handle file upload
+                var content = new StreamContent(stream);
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "logo", file.Name);
+
+                var response = await Http.PostAsync("api/venue/uploadlogo", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    FileName = file.Name;
+                    // Update LogoUrlPath if needed
+                }
+                else
+                {
+                    // Handle error
+                }
+            }
+        }
+    }
+
+    private async Task CreateVenue()
+    {
+        var response = await Http.PostAsJsonAsync("api/venue", NewVenue);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/Venue");
+        }
+        else
+        {
+            // Handle error
+        }
+    }
+}
+
+<div class="container h-100 mb-5">
+    <h1>Create New Venue</h1>
+
+    <form @onsubmit="CreateVenue" class="createForm">
+        <div class="row custom-file">
+            <label for="logo" class="custom-file-label">@FileName</label>
+            <InputFile OnChange="HandleFileUpload" class="custom-file-input" />
+        </div>
+
+        <div>
+            <label for="Name">Venue Name:</label>
+            <InputText @bind-Value="NewVenue.Name" class="form-control" />
+        </div>
+
+        <div>
+            <label for="Email">Email:</label>
+            <InputText @bind-Value="NewVenue.Email" class="form-control" />
+        </div>
+
+        <div>
+            <label for="Address">Address:</label>
+            <InputText @bind-Value="NewVenue.Address" class="form-control" />
+        </div>
+
+        <div>
+            <label for="ContactNumber">Contact Number:</label>
+            <InputText @bind-Value="NewVenue.ContactNumber" class="form-control" />
+        </div>
+
+        <div>
+            <label for="AveragePrice">Average Price:</label>
+            <InputNumber @bind-Value="NewVenue.AveragePrice" class="form-control" />
+        </div>
+
+        <div>
+            <label for="Description">Description:</label>
+            <InputTextArea @bind-Value="NewVenue.Description" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Venue</button>
+    </form>
+</div>
+
+<style>
+    .createForm div {
+        margin-bottom: 15px;
+    }
+
+    .createForm .row {
+        height: 45px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .createForm div label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .createForm div input[type="text"],
+    .createForm div input[type="number"],
+    .createForm div textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .createForm button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .createForm button:hover {
+        background-color: #4cae4c;
+    }
+</style>

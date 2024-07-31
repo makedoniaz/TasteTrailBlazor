@@ -1,0 +1,267 @@
+﻿@page "/Venue"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Venue</PageTitle>
+
+@code {
+    private class VenueClass
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? Description { get; set; }
+        public string? ContactNumber { get; set; }
+        public string? Email { get; set; }
+        public string? LogoUrlPath { get; set; }
+        public float AveragePrice { get; set; }
+        public float OverallRating { get; set; }
+    }
+
+    private List<VenueClass> Model = new List<VenueClass>();
+    private bool IsAdmin = true;
+    private VenueClass? SelectedVenue { get; set; } = null;
+    private string searchQuery = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVenues();
+    }
+
+    private async Task LoadVenues()
+    {
+        Model = await Http.GetFromJsonAsync<List<VenueClass>>("api/venue");
+    }
+
+    private async Task UpdateVenue()
+    {
+        if (SelectedVenue != null)
+        {
+            var response = await Http.PutAsJsonAsync($"api/venue/{SelectedVenue.Id}", SelectedVenue);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadVenues();
+                SelectedVenue = null;
+            }
+            else
+            {
+                // Handle error
+            }
+        }
+    }
+
+    private async Task DeleteVenue(int id)
+    {
+        var response = await Http.DeleteAsync($"api/venue/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadVenues();
+        }
+        else
+        {
+            // Handle error
+        }
+    }
+
+    private void FilterVenues()
+    {
+        if (string.IsNullOrEmpty(searchQuery))
+        {
+            Model = Model.Where(v => true).ToList();
+        }
+        else
+        {
+            Model = Model.Where(v => v.Name?.ToLower().Contains(searchQuery.ToLower()) == true).ToList();
+        }
+    }
+
+    private void ShowUpdateForm(VenueClass venue)
+    {
+        SelectedVenue = venue;
+    }
+
+    private void HideUpdateForm()
+    {
+        SelectedVenue = null;
+    }
+}
+<div class="container h-100 mb-5">
+    <h1 style="font-size: 2rem; font-family: 'Alice', serif; margin-bottom: 3px;">Search Venue</h1>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8">
+                <div class="input-group mb-3">
+                    <input type="text" @bind="searchQuery" @oninput="FilterVenues" class="form-control"
+                        placeholder="Search for venues..." autocomplete="off" autofocus>
+                    <button class="btn btn-primary" @onclick="FilterVenues">
+                        <span id="searchText">Search</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (IsAdmin)
+    {
+        <a href="/Venue/Create" class="btn btn-primary w-25 mt-2 mb-3">Create new Venue</a>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="no-venues">
+            <p>No venues available at the moment.</p>
+        </div>
+    }
+    else
+    {
+        <div class="content mt-3 mt-md-5">
+            <div class="container">
+                <div class="row">
+                    @foreach (var venue in Model)
+                    {
+                        <div class="col-md-3 mb-4 venue-item" data-id="@venue.Id">
+                            <div class="card mb-4 h-100">
+                                <img src="@(venue.LogoUrlPath ?? "../images/not-available.jpg")" class="card-img-top fixed-size"
+                                    alt="@venue.Name">
+                                <div class="card-body">
+                                    <h5 class="card-title">@venue.Name</h5>
+                                    <div class="rating">
+                                        <span class="text-warning">
+                                            @for (var i = 0; i < venue.OverallRating; i++)
+                                            {
+                                                <i class="fas fa-star"></i>
+                                            }
+                                            @if (venue.OverallRating < 5)
+                                            {
+                                                for (var j = venue.OverallRating; j < 5; j++)
+                                                {
+                                                    <i class="far fa-star"></i>
+                                                }
+                                            }
+                                        </span>
+                                        <span class="badge bg-secondary ms-2">@venue.OverallRating</span>
+                                    </div>
+                                    <p class="card-text">@venue.Description</p>
+                                    <div class="venue-actions">
+                                        <a href="/Venue/@venue.Id" class="btn btn-primary m-1">View Details</a>
+                                        @if (IsAdmin)
+                                        {
+                                            <button class="btn btn-secondary m-1"
+                                                @onclick="() => ShowUpdateForm(venue)">Update</button>
+                                            <button class="btn btn-danger m-1"
+                                                @onclick="() => DeleteVenue(venue.Id)">Delete</button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (SelectedVenue != null)
+    {
+        <div class="update-form">
+            <h3>Update Venue</h3>
+            <div>
+                <label for="newName">Name:</label>
+                <input type="text" @bind="SelectedVenue.Name">
+            </div>
+            <div>
+                <label for="newEmail">Email:</label>
+                <input type="text" @bind="SelectedVenue.Email">
+            </div>
+            <div>
+                <label for="newAddress">Address:</label>
+                <input type="text" @bind="SelectedVenue.Address">
+            </div>
+            <div>
+                <label for="newContactNumber">Contact Number:</label>
+                <input type="text" @bind="SelectedVenue.ContactNumber">
+            </div>
+            <div>
+                <label for="newAveragePrice">Average Price:</label>
+                <input type="number" @bind="SelectedVenue.AveragePrice">
+            </div>
+            <div>
+                <label for="newDescription">Description:</label>
+                <input type="text" @bind="SelectedVenue.Description">
+            </div>
+            <br>
+            <div class="venue-actions">
+                <button @onclick="UpdateVenue">Save</button>
+                <button @onclick="HideUpdateForm">Cancel</button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .fixed-size {
+        height: 350px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .venue-actions {
+        flex-shrink: 0;
+    }
+
+    .btn {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background-color: #4cae4c;
+    }
+
+    .update-form {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.418);
+        z-index: 1000;
+        width: 500px;
+    }
+
+    .update-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .update-form input[type="text"],
+    .update-form input[type="number"] {
+        width: calc(100% - 22px);
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+
+    .update-form button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .update-form button:hover {
+        background-color: #4cae4c;
+    }
+</style>
