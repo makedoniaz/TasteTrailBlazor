@@ -1,37 +1,24 @@
-﻿@page "/Venue"
+﻿@inject NavigationManager Navigation
 @inject HttpClient Http
-@inject NavigationManager Navigation
+@page "/Venue"
 
 <PageTitle>Venue</PageTitle>
 
 @code {
-    private class VenueClass
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public string? Address { get; set; }
-        public string? Description { get; set; }
-        public string? ContactNumber { get; set; }
-        public string? Email { get; set; }
-        public string? LogoUrlPath { get; set; }
-        public float AveragePrice { get; set; }
-        public float OverallRating { get; set; }
-    }
-
-    private List<VenueClass> Model = new List<VenueClass>();
+    private List<Venue> Model = new List<Venue>();
     private bool IsAdmin = true;
-    private VenueClass? SelectedVenue { get; set; } = null;
+    private Venue? SelectedVenue { get; set; } = null;
     private string searchQuery = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    protected async override Task OnInitializedAsync()
     {
-        await LoadVenues();
+        // await LoadVenues();
     }
 
-    private async Task LoadVenues()
-    {
-        Model = await Http.GetFromJsonAsync<List<VenueClass>>("api/venue");
-    }
+    //private async Task LoadVenues()
+    //{
+    // Model = await Http.GetFromJsonAsync<List<Venue>>("api/venue");
+    //}
 
     private async Task UpdateVenue()
     {
@@ -40,7 +27,7 @@
             var response = await Http.PutAsJsonAsync($"api/venue/{SelectedVenue.Id}", SelectedVenue);
             if (response.IsSuccessStatusCode)
             {
-                await LoadVenues();
+                //await LoadVenues();
                 SelectedVenue = null;
             }
             else
@@ -55,7 +42,7 @@
         var response = await Http.DeleteAsync($"api/venue/{id}");
         if (response.IsSuccessStatusCode)
         {
-            await LoadVenues();
+            //await LoadVenues();
         }
         else
         {
@@ -75,7 +62,7 @@
         }
     }
 
-    private void ShowUpdateForm(VenueClass venue)
+    private void ShowUpdateForm(Venue venue)
     {
         SelectedVenue = venue;
     }
@@ -85,18 +72,17 @@
         SelectedVenue = null;
     }
 }
+
 <div class="container h-100 mb-5">
-    <h1 style="font-size: 2rem; font-family: 'Alice', serif; margin-bottom: 3px;">Search Venue</h1>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-8">
-                <div class="input-group mb-3">
-                    <input type="text" @bind="searchQuery" @oninput="FilterVenues" class="form-control"
-                        placeholder="Search for venues..." autocomplete="off" autofocus>
-                    <button class="btn btn-primary" @onclick="FilterVenues">
-                        <span id="searchText">Search</span>
-                    </button>
-                </div>
+    <h1 style="font-size: 2rem; ">Search Venue</h1>
+    <div class="column justify-content-center">
+        <div class="row-12 row-md-8">
+            <div class="input-group mb-3">
+                <input type="text" @bind="searchQuery" @oninput="FilterVenues" class="form-control"
+                    placeholder="Search for venues..." autocomplete="off" autofocus>
+                <button class="btn btn-primary" @onclick="FilterVenues">
+                    <span id="searchText">Search</span>
+                </button>
             </div>
         </div>
     </div>
@@ -199,38 +185,123 @@
 </div>
 
 <style>
-    .fixed-size {
-        height: 350px;
+    h1 {
+        color: #333;
+    }
+
+    .btn-modern {
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-modern:hover {
+        background-color: #218838;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="email"],
+    select,
+    textarea {
         width: 100%;
-        object-fit: cover;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #4cae4c;
+    }
+
+    .card-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .no-venues {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .no-venues img.sad-face {
+        width: 100px;
+        height: 100px;
+    }
+
+    .no-venues p {
+        font-size: 18px;
+        color: #888;
+    }
+
+    .venue-item {
+        background-color: #cfe2f3;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+        transition: transform 0.3s ease-in-out;
+        position: relative;
+    }
+
+    .venue-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .venue-details p {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.6;
+        font-weight: 550;
+        color: #333;
+    }
+
+    .venue-details p strong {
+        font-weight: bold;
+        color: #666;
     }
 
     .venue-actions {
         flex-shrink: 0;
     }
 
-    .btn {
-        background-color: #5cb85c;
-        color: white;
+    .venue-item hr {
+        margin: 10px 0;
         border: none;
-        padding: 8px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .btn:hover {
-        background-color: #4cae4c;
+        border-top: 1px solid #e0e0e0;
     }
 
     .update-form {
-        position: fixed;
-        top: 50%;
+        position: absolute;
+        top: 45%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-40%, -50%);
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.418);
+        display: none;
         z-index: 1000;
         width: 500px;
     }
@@ -242,7 +313,9 @@
     }
 
     .update-form input[type="text"],
-    .update-form input[type="number"] {
+    .update-form input[type="date"],
+    .update-form input[type="email"],
+    .update-form select {
         width: calc(100% - 22px);
         padding: 8px;
         box-sizing: border-box;

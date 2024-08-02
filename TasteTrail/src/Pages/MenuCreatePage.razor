@@ -1,0 +1,146 @@
+﻿@page "/Menu/Create"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Create Menu</PageTitle>
+
+@code {
+
+    private Menu NewMenu = new Menu();
+    private string? FileName = "Upload Logo";
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            using (var stream = file.OpenReadStream())
+            {
+                // Logic to handle file upload
+                var content = new StreamContent(stream);
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "logo", file.Name);
+
+                var response = await Http.PostAsync("api/menu/uploadlogo", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    FileName = file.Name;
+                    // Update LogoUrlPath if needed
+                }
+                else
+                {
+                    // Handle error
+                }
+            }
+        }
+    }
+
+    private async Task CreateMenu()
+    {
+        var response = await Http.PostAsJsonAsync("api/menu", NewMenu);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/Menu");
+        }
+        else
+        {
+            // Handle error
+        }
+    }
+}
+
+<div class="container h-100 mb-5">
+    <h1>Create New Menu</h1>
+
+    <form @onsubmit="CreateMenu" class="createForm">
+        <div>
+            <label for="Name">Menu Name:</label>
+            <InputText @bind-Value="NewMenu.Name" class="form-control" />
+        </div>
+        <div>
+            <label for="Description">Descriptione:</label>
+            <InputText @bind-Value="NewMenu.Name" class="form-control" />
+        </div> 
+        <button type="submit">Add Menu</button>
+    </form>
+
+</div>
+
+
+
+<style>
+    h1 {
+        color: #333;
+    }
+
+
+    .createForm div {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .createForm div input[type="text"],
+    .createForm div input[type="date"],
+    .createForm div input[type="email"],
+    .createForm div select,
+    .createForm div textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #4cae4c;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th,
+    td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    th:first-child,
+    td:first-child {
+        width: 3px;
+        text-align: center;
+    }
+
+    #toggleSelectAll {
+        background-color: #f2f2f2;
+        color: #ccc;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>

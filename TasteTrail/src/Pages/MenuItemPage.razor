@@ -1,0 +1,285 @@
+﻿@page "/MenuItem"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Menu Item</PageTitle>
+
+@code {
+
+    private List<MenuItem> Model = new List<MenuItem>();
+    private MenuItem? SelectedMenu;
+    private bool IsAdmin = true;
+    private string searchQuery = string.Empty;
+
+    protected async override Task OnInitializedAsync()
+    {
+        //await LoadMenus();
+    }
+
+    //private async Task LoadMenus()
+    //{
+    // Model = new();
+    //}
+
+    private void ShowUpdateForm(MenuItem menuItem)
+    {
+        SelectedMenu = menuItem;
+        StateHasChanged();
+    }
+
+    private async Task  UpdateMenu()
+    {
+        if (SelectedMenu != null)
+        {
+            try
+            {
+                var response = await Http.PutAsJsonAsync($"api/menus/{SelectedMenu.Id}", SelectedMenu);
+                if (response.IsSuccessStatusCode)
+                {
+                    //await LoadMenus();
+                    SelectedMenu = null;
+                }
+                else
+                {
+                    Console.WriteLine("Failed to update menuItem");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+            }
+        }
+    }
+
+    private void DeleteMenu(int id)
+    {
+    }
+
+    private void FilterMenus()
+    {
+    }
+
+    private void HideUpdateForm()
+    {
+        //SelectedVenue = null;
+    }
+}
+<div class="container h-100 mb-5">
+
+    <h1 style="font-size: 2rem; ">Search MenuItem</h1>
+
+    <div class="column justify-content-center">
+        <div class="row-12 row-md-8">
+            <div class="input-group mb-3">
+                <input type="text" @bind="searchQuery" @oninput="FilterMenus" class="form-control"
+                    placeholder="Search for menus..." autocomplete="off" autofocus>
+                <button class="btn btn-primary" @onclick="FilterMenus">
+                    <span id="searchText">Search</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (IsAdmin)
+    {
+        <a href="/MenuItem/Create" class="btn btn-primary w-25 mt-2 mb-3">Create new MenuItem</a>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <div class="no-menus">
+            <p>No menus available at the moment.</p>
+        </div>
+    }
+    else
+    {
+        <ol class="card-list">
+            @foreach (var menuItem in Model)
+            {
+                <li class="card-item">
+                    <a class="nav-link" href="@($"/menuItem/details/{menuItem.Id}")">
+                        <div class="card-details">
+                            <p><strong>MenuItem Name:</strong> @(menuItem.Name ?? "UNKNOWN")</p>
+                            <p><strong>MenuItem Description:</strong> @(menuItem.Description ?? "UNKNOWN")</p>
+                        </div>
+                    </a>
+                    <br />
+                    @if (IsAdmin)
+                    {
+                        <div class="card-actions">
+                            <button class="update-btn btn-close-white" @onclick="() => ShowUpdateForm(menuItem)">Update</button>
+                            <button class="delete-btn btn-danger m-1" @onclick="() => DeleteMenu(menuItem.Id)">Delete</button>
+                        </div>
+                    }
+                </li>
+            }
+        </ol>
+    }
+
+    @if (SelectedMenu != null)
+    {
+        <div id="updateForm" class="update-form">
+            <h3>Update MenuItem</h3>
+            <input type="hidden" @bind="SelectedMenu.Id" />
+            <div>
+                <label for="newName">Name:</label>
+                <input type="text" id="newName" @bind="SelectedMenu.Name" />
+            </div>
+            <div>
+                <label for="newDescription">Description:</label>
+                <input type="text" id="newDescription" @bind="SelectedMenu.Description" />
+            </div>
+            <br />
+            <div class="card-actions">
+                <button @onclick="() => UpdateMenu()">Save</button>
+                <button @onclick="() => HideUpdateForm()">Cancel</button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    h1 {
+        color: #333;
+    }
+
+    .btn-modern {
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-modern:hover {
+        background-color: #218838;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="email"],
+    select,
+    textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #4cae4c;
+    }
+
+
+    .no-menus {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .no-menus p {
+        font-size: 18px;
+        color: #888;
+    }
+
+    .card-item {
+        background-color: #cfe2f3;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+        transition: transform 0.3s ease-in-out;
+        position: relative;
+    }
+
+    .card-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-details p {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.6;
+        font-weight: 550;
+        color: #333;
+    }
+
+    .card-details p strong {
+        font-weight: bold;
+        color: #666;
+    }
+
+    .card-actions {
+        flex-shrink: 0;
+    }
+
+    .card-item hr {
+        margin: 10px 0;
+        border: none;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .update-form {
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        transform: translate(-40%, -50%);
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.418);
+        display: none;
+        z-index: 1000;
+        width: 500px;
+    }
+
+    .update-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .update-form input[type="text"],
+    .update-form input[type="date"],
+    .update-form input[type="email"],
+    .update-form select {
+        width: calc(100% - 22px);
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+
+    .update-form button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .update-form button:hover {
+        background-color: #4cae4c;
+    }
+</style>
