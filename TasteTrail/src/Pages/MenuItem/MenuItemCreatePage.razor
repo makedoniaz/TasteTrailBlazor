@@ -1,0 +1,144 @@
+﻿@page "/MenuItem/Create"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Create MenuItem</PageTitle>
+
+@code {
+    private MenuItem NewMenuItem = new MenuItem();
+
+    private async Task CreateMenuItem()
+    {
+        var response = await Http.PostAsJsonAsync("api/menuItem", NewMenuItem);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/MenuItem");
+        }
+        else
+        {
+            // Handle error
+        }
+    }
+
+    [JSInvokable]
+    public void SetRating(int rating)
+    {
+        if (rating >= 1 && rating <= 5)
+        {
+            NewMenuItem.PopularityRate = rating;
+            InvokeAsync(StateHasChanged);
+        } 
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initializeRating", DotNetObjectReference.Create(this));
+        }
+    }
+}
+
+<div class="container h-100 mb-5">
+    <h1 style="font-size: 1.5rem;">Create new MenuItem</h1>
+
+    <form @onsubmit="CreateMenuItem" class="createForm">
+        <div>
+            <label for="Name">Menu Item Name:</label>
+            <InputText @bind-Value="NewMenuItem.Name" />
+        </div>
+        <div>
+            <label for="PopularityRate">Popularity Rate:</label>
+            <InputNumber @bind-Value="NewMenuItem.PopularityRate" hidden />
+            <div class="rating">
+                <span class="text-warning">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <i class="@(NewMenuItem.PopularityRate >= i ? "fas" : "far") fa-star star" data-value="@i" style="cursor: pointer;" @onclick="() => SetRating(i)"></i>
+                    }
+                </span>
+                <span class="badge bg-secondary ms-2">@NewMenuItem.PopularityRate</span>
+            </div>
+        </div>
+        <div>
+            <label for="Price">Price:</label>
+            <InputNumber @bind-Value="NewMenuItem.Price" />
+        </div>
+        <div>
+            <label for="Description">Description:</label>
+            <InputTextArea @bind-Value="NewMenuItem.Description" />
+        </div>
+        <button type="submit" class="btn btn-primary">Add MenuItem</button>
+    </form>
+</div>
+
+<style>
+    .createForm div {
+        margin-bottom: 15px;
+    }
+
+    .createForm .row {
+        height: 45px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .createForm div label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .createForm div input[type="text"],
+    .createForm div input[type="number"],
+    .createForm div textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .createForm button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .createForm button:hover {
+        background-color: #4cae4c;
+    }
+</style>
+
+<script>
+    function initializeRating(dotNetHelper) {
+    const stars = document.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.addEventListener('click', (e) => {
+            const rating = e.target.getAttribute('data-value');
+            console.log(`Star clicked: ${rating}`); // Отладочный вывод
+            dotNetHelper.invokeMethodAsync('SetRating', parseInt(rating));
+            updateStars(rating);
+        });
+    });
+
+    function updateStars(rating) {
+        console.log(`Updating stars to rating: ${rating}`); // Отладочный вывод
+        stars.forEach(star => {
+            const value = star.getAttribute('data-value');
+            if (value <= rating) {
+                star.classList.remove('far');
+                star.classList.add('fas');
+            } else {
+                star.classList.remove('fas');
+                star.classList.add('far');
+            }
+        });
+    }
+}
+
+</script>

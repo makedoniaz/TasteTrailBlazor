@@ -1,4 +1,4 @@
-﻿@page "/Venue/{Id:int}"
+﻿@page "/Venue/{Id:int?}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -16,6 +16,17 @@
     public int Id { get; set; }
 
     private VenueViewModel Model = new VenueViewModel();
+    @* Model.Venue = new Venue {
+                Id = 1,
+                Name = "Text",
+                Address = "Text",
+                Description = "Text",
+                ContactNumber = "Text",
+                Email = "Text",
+                LogoUrlPath = "Text",
+                AveragePrice = 1,
+                OverallRating = 5
+            }; *@
     private bool IsAdmin = false;
     @* private string path => Model.Venue?.LogoUrlPath == null ? "../images/not-available.jpg" : "../" +
 Model.Venue.LogoUrlPath; *@
@@ -34,7 +45,10 @@ Model.Venue.LogoUrlPath; *@
     }
 }
 
-<div class="container mt-4">
+<p>
+@Id
+ </p>
+@*<div class="container mt-4">
     <div class="row">
         <div class="col-md-4">
             <!-- Slideshow -->
@@ -105,9 +119,10 @@ Model.Venue.LogoUrlPath; *@
         <h2>Location</h2>
         <div id="map" style="height: 300px;"></div>
     </div>
-</div>
+</div> 
 
 <style>
+    body{background-color: #4cae4c;}
     button {
         background-color: #5cb85c;
         color: white;
@@ -201,4 +216,4 @@ Model.Venue.LogoUrlPath; *@
         L.marker([40.3820624, 49.877007]).addTo(map)
             .bindPopup("<b>Location</b><br>Address").openPopup();
     });
-</script>
+</script> *@
