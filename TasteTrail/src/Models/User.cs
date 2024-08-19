@@ -5,8 +5,21 @@ using System.Threading.Tasks;
 
 namespace TasteTrailBlazor.Models;
 
-public class User
+public class User  
 {
-    public int Id { get; set; }
-    public string? Name { get; set; }
+    public bool IsBanned { get; set; }
+
+    public bool IsMuted { get; set; }
+
+    public string? AvatarPath { get; set; }
+
+    public ICollection<Feedback> Feedbacks { get; set; }
+
+    public ICollection<Venue> Venues { get; set; }
+
+    public ICollection<AccessToken> RefreshTokens { get; set; }
+
+    public ICollection<MenuItem> MenuItems { get; set; }
+
+    public ICollection<Menu> Menus { get; set; }
 }

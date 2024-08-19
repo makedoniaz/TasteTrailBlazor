@@ -37,8 +37,7 @@
         }
 
         var refreshAccessTokens = await loginHttpResponse.Content.ReadFromJsonAsync<AccessToken>();
-            Console.WriteLine(refreshAccessTokens);  
-
+ 
         if (refreshAccessTokens is null)
         {
             httpResponseErrorMessage = "Error during login. Please try again.";

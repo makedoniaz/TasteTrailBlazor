@@ -1,4 +1,6 @@
-﻿@inject NavigationManager UriHelper
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager UriHelper
 @inject HttpClient Http
 @page "/Venue"
 
@@ -30,14 +32,15 @@ OverallRating = 1
 }
 };
 
-    private bool IsAdmin = true;
+    private bool IsAdmin = false;  
     private Venue? SelectedVenue { get; set; } = null;
     private string searchQuery = string.Empty;
 
-    @* protected async override Task OnInitializedAsync()
+      protected async override Task OnInitializedAsync()
     {
+       await CheckAdminRoleAsync();
         // await LoadVenues();
-    } *@
+    } 
 
     //private async Task LoadVenues()
     //{
@@ -102,6 +105,33 @@ OverallRating = 1
         UriHelper.NavigateTo($"/Venue/{Id}");
     }
 
+    private async Task CheckAdminRoleAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+          if (userId != null)
+        {
+            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+
+            var response = await httpClient.GetAsync($"/api/User/GetUserRoles/{userId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<UserDto>();
+
+                if (dto?.Roles != null && dto.Roles.Contains("Admin"))
+                {
+                    IsAdmin = true;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Failed to retrieve user roles.");
+            }
+        }
+    }
+
 }
 
 <div class="container h-100 mb-5 mt-2">
@@ -136,13 +166,13 @@ OverallRating = 1
     }
     else
     {
-
         <div class="card-container mt-3 mt-md-5">
             @foreach (var venue in Model)
             {
                 <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(venue.Id)">
                     <div class="card m-2">
                         <div class="card-head">
+                            @if (IsAdmin) {
                             <button class="card-btn" @onclick="() => ShowUpdateForm(venue)">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 850">
                                     <path
@@ -155,6 +185,7 @@ OverallRating = 1
                                         d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
                                 </svg>
                             </button>
+                            }
                             <img src="https://logo.png" alt="logo" class="card-logo">
                             <div class="product-detail">
                                 <h2>@venue.Name</h2> @venue.Description
@@ -193,8 +224,7 @@ OverallRating = 1
             }
         </div>
     }
-
-    @if (SelectedVenue != null)
+    @if (SelectedVenue != null && IsAdmin)
     {
         <div class="update-form">
             <h3>Update Venue</h3>

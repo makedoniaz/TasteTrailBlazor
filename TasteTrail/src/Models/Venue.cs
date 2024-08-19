@@ -17,3 +17,4 @@ public class Venue
     public float AveragePrice { get; set; }
     public float OverallRating { get; set; }
 } 
+

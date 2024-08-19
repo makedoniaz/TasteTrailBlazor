@@ -1,9 +1,9 @@
 ﻿@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IAuthorizationService AuthorizationService 
+@inject IAuthorizationService AuthorizationService
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService localStorageService
- 
+
 @code {
     private bool IsAuthenticated = false;
     private bool IsAdmin = false;
@@ -19,37 +19,49 @@
         if (IsAuthenticated)
         {
             Name = user.Identity.Name;
-           await CheckAdminRoleAsync(user);
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Console.WriteLine(userId);
+
+            await CheckAdminRoleAsync(userId);
         }
     }
 
-    private async Task CheckAdminRoleAsync(ClaimsPrincipal user)
+    private async Task CheckAdminRoleAsync(string userId)
     {
-         var userId = user.FindFirst(c => c.Type == "sub")?.Value;
-       if (userId != null)
-       {
-           var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
-           var roles = await httpClient.GetFromJsonAsync<List<string>>($"/api/User/GetUserRoles/{userId}");
-           
-           if (roles != null && roles.Contains("Admin"))
-           {
-               IsAdmin = true;
-           }
-       }  
+         if (userId != null)
+        {
+            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+
+            var response = await httpClient.GetAsync($"/api/User/GetUserRoles/{userId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<UserDto>();
+
+                if (dto?.Roles != null && dto.Roles.Contains("Admin"))
+                {
+                    IsAdmin = true;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Failed to retrieve user roles.");
+            }
+        }
     }
 
- 
-private async Task LogoutAsync()
-{
-     await localStorageService.RemoveItemAsync("jwt");
-    await localStorageService.RemoveItemAsync("refresh");
 
-     var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
-    authProvider.NotifyUserLogout();
+    private async Task LogoutAsync()
+    {
+        await localStorageService.RemoveItemAsync("jwt");
+        await localStorageService.RemoveItemAsync("refresh");
 
-    // Redirect to the login page
-    NavigationManager.NavigateTo("/Login", true);
-}
+        var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
+        authProvider.NotifyUserLogout();
+
+        // Redirect to the login page
+        NavigationManager.NavigateTo("/Login", true);
+    }
 
 
 }
@@ -57,7 +69,7 @@ private async Task LogoutAsync()
     <nav>
         <div class="nav_header">
             <div class="nav_logo">
-                <a href="/"> 
+                <a href="/">
                     <img src="../Assets/logo-dark.png" alt="logo" class="nav_logo-dark" />
                 </a>
             </div>

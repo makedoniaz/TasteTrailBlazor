@@ -1,5 +1,6 @@
 ﻿@page "/Menu"
-@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
 
 <PageTitle>Menu</PageTitle>
@@ -9,10 +10,11 @@
     private bool IsAdmin = true;
     private string searchQuery = string.Empty;
 
-    @* protected async override Task OnInitializedAsync()
+      protected async override Task OnInitializedAsync()
     {
+        await CheckAdminRoleAsync();
         //await LoadMenus();
-    } *@
+    }  
 
     //private async Task LoadMenus()
     //{
@@ -30,8 +32,8 @@
         {
             try
             {
-                var response = await Http.PutAsJsonAsync($"api/menus/{SelectedMenu.Id}", SelectedMenu);
-                if (response.IsSuccessStatusCode)
+               // var response = await Http.PutAsJsonAsync($"api/menus/{SelectedMenu.Id}", SelectedMenu);
+                @* if (response.IsSuccessStatusCode)
                 {
                     //await LoadMenus();
                     SelectedMenu = null;
@@ -39,7 +41,7 @@
                 else
                 {
                     Console.WriteLine("Failed to update menu.");
-                }
+                } *@
             }
             catch (Exception ex)
             {
@@ -59,6 +61,33 @@
     private void HideUpdateForm()
     {
         SelectedMenu = null;
+    }
+
+     private async Task CheckAdminRoleAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+          if (userId != null)
+        {
+            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+
+            var response = await httpClient.GetAsync($"/api/User/GetUserRoles/{userId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<UserDto>();
+
+                if (dto?.Roles != null && dto.Roles.Contains("Admin"))
+                {
+                    IsAdmin = true;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Failed to retrieve user roles.");
+            }
+        }
     }
 }
 <div class="container h-100 mb-5 mt-2">

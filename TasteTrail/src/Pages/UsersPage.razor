@@ -13,7 +13,7 @@
     private async Task UpdateUser()
     {
 
-        if (SelectedUser != null)
+        @* if (SelectedUser != null)
         {
             var response = await Http.PutAsJsonAsync($"api/user/{SelectedUser.Id}", SelectedUser);
             if (response.IsSuccessStatusCode)
@@ -23,7 +23,7 @@
             else
             {
             }
-        }
+        } *@
     }
 
     private async Task DeleteUser(int id)
@@ -78,7 +78,7 @@
     else
     {
 
-        <div class="card-container mt-3 mt-md-5">
+        @* <div class="card-container mt-3 mt-md-5">
             @foreach (var user in Model)
             {
                 <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(user.Id)">
@@ -111,9 +111,9 @@
                     </div>
                 </a>
             }
-        </div>
+        </div> *@
     }
-
+@* 
     @if (SelectedUser != null)
     {
         <div class="update-form">
@@ -128,7 +128,7 @@
                 <button @onclick="() => HideUpdateForm()">Cancel</button>
             </div>
         </div>
-    }
+    } *@
 </div>
 
 <style>
