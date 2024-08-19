@@ -1,6 +1,6 @@
 ﻿@page "/Venue/{Id:int?}"
 @inject HttpClient Http
-@inject NavigationManager Navigation
+@inject NavigationManager UriHelper
 
 <PageTitle>Venue Details</PageTitle>
 
@@ -10,45 +10,70 @@
         public Venue? Venue { get; set; }
         public List<Menu>? Menus { get; set; } = new List<Menu>();
         public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
+        public double Latitude { get; set; } = 40.3820624;
+        public double Longitude { get; set; } = 49.877007;
     }
 
     [Parameter]
     public int Id { get; set; }
 
-    private VenueViewModel Model = new VenueViewModel();
-    @* Model.Venue = new Venue {
+    private VenueViewModel Model = new VenueViewModel
+    {
+        Venue = new Venue
+        {
+            Id = 1,
+            Name = "Text",
+            Address = "Text",
+            Description = "Text",
+            ContactNumber = "Text",
+            Email = "Text",
+            LogoUrlPath = "Text",
+            AveragePrice = 1,
+            OverallRating = 5
+        },
+        Menus = new List<Menu> {
+            new Menu{
                 Id = 1,
                 Name = "Text",
-                Address = "Text",
                 Description = "Text",
-                ContactNumber = "Text",
-                Email = "Text",
-                LogoUrlPath = "Text",
-                AveragePrice = 1,
-                OverallRating = 5
-            }; *@
-    private bool IsAdmin = false;
-    @* private string path => Model.Venue?.LogoUrlPath == null ? "../images/not-available.jpg" : "../" +
-Model.Venue.LogoUrlPath; *@
-    private string path = "";
-   protected async override Task OnInitializedAsync()
+                VenueId = 1,
+                Venue = new Venue(),
+                MenuItems = new List<MenuItem>{
+                    new MenuItem
+                    {
+                        Id = 1,
+                        Name = "Text",
+                        Description = "Text",
+                    }
+                }
+            },
+            new Menu{
+                Id = 2,
+                Name = "Text",
+                Description = "Text",
+                VenueId = 1,
+                Venue = new Venue(),
+                MenuItems = new List<MenuItem>{
+                    new MenuItem
+                    {
+                        Id = 2,
+                        Name = "Text",
+                        Description = "Text",
+                    }
+                }
+            }
+        }
+    };
+
+    private bool IsAdmin = true;
+    private string path => Model.Venue?.LogoUrlPath == null ? "/images/not-available.jpg" : "../" + Model.Venue.LogoUrlPath;
+    private void GoToDetails(int Id)
     {
-          LoadVenueDetailsAsync();
-    }
-
-    private void  LoadVenueDetailsAsync()
-    { 
-    }
-
-    private void  DeleteMenuAsync(int id)
-    { 
+        UriHelper.NavigateTo($"/Menu/{Id}");
     }
 }
 
-<p>
-@Id
- </p>
-@*<div class="container mt-4">
+<div class="container mt-4">
     <div class="row">
         <div class="col-md-4">
             <!-- Slideshow -->
@@ -57,7 +82,6 @@ Model.Venue.LogoUrlPath; *@
                     <div class="carousel-item active">
                         <img src="@path" class="d-block w-100" alt="Venue Photo">
                     </div>
-                    <!-- Add more carousel items if necessary -->
                 </div>
             </div>
         </div>
@@ -93,23 +117,29 @@ Model.Venue.LogoUrlPath; *@
             }
         </div>
     </div>
-    <div class="row">
+    <hr class="mt-5">
+
+    <div class="row mt-5">
         @foreach (var menu in Model?.Menus)
         {
-            <div class="col-md-3 restaurantItem mb-4">
-                <div class="card mb-4 h-100 w-100">
-                    <div class="card-body">
-                        <h5 class="card-title m-2">@menu.Name</h5>
-                        <p class="card-text m-2">@menu.Description</p>
-                        <div class="venue-actions m-1">
-                            <a href="/Menu/MenuDetails/@menu.Id" class="btn btn-primary m-1">Menu Details</a>
-                            @if (IsAdmin)
-                            {
-                                <button class="delete-btn btn-danger m-1" onclick="DeleteMenu(menu.Id)">Delete</button>
-                            }
-                        </div>
+            <div class="menu">
+                <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(menu.Id)">
+                    <div class="menu-head">
+                        <h1>@menu.Name</h1>
+                        <p class="established">@menu.Description</p>
                     </div>
-                </div>
+                    <hr />
+                    @foreach (var menuItems in menu.MenuItems)
+                    {
+                        <section>
+                            <h2>Header</h2>
+                            <article class="item">
+                                <p class="flavor">@menuItems.Name</p>
+                                <p class="price">150</p>
+                            </article>
+                        </section>
+                    }
+                </a>
             </div>
         }
     </div>
@@ -118,102 +148,99 @@ Model.Venue.LogoUrlPath; *@
     <div class="mt-5">
         <h2>Location</h2>
         <div id="map" style="height: 300px;"></div>
+        <p class="mt-3"><strong>Latitude: </strong><span id="lat">@Model.Latitude</span></p>
+        <p class="mt-3"><strong>Longitude: </strong><span id="lng">@Model.Longitude</span></p>
     </div>
-</div> 
+</div>
 
-<style>
-    body{background-color: #4cae4c;}
-    button {
-        background-color: #5cb85c;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background-color: #4cae4c;
-    }
-</style>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-    $(document).ready(function () {
-        // Rating handling code
-        const stars = $('.rating .star');
+    var map = L.map('map').setView([@Model.Latitude, @Model.Longitude], 15);
 
-        stars.on('click', function () {
-            const value = parseInt($(this).data('value'));
-            const container = $(this).closest('.rating');
-            const restaurantRatingElement = container.find('.badge');
-            const restaurantRating = parseFloat(container.data('rating'));
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-            stars.removeClass('fas fa-star fa-star-half-alt far');
+    var marker = L.marker([@Model.Latitude, @Model.Longitude], { draggable: true }).addTo(map);
 
-            for (let i = 0; i < value; i++) {
-                stars.eq(i).addClass('fas fa-star');
-            }
+    function updateCoordinates(lat, lng) {
+        document.getElementById('lat').innerText = lat.toFixed(6);
+        document.getElementById('lng').innerText = lng.toFixed(6);
+    }
 
-            if (value > restaurantRating) {
-                stars.eq(value - 1).addClass('fa-star-half-alt');
-            } else if (value < restaurantRating) {
-                stars.eq(value).addClass('far fa-star');
-            }
-
-            container.data('rating', value);
-            restaurantRatingElement.text(value.toFixed(1));
-        });
-
-        $('#addFeedbackBtn').on('click', function () {
-            const isAlreadyOpen = $('#commentFormSection').is(':visible');
-            if (!isAlreadyOpen) {
-                $('#commentName').val("");
-                $('#commentRating').val("");
-                $('#commentMessage').val("");
-                $('#commentFormSection').slideDown();
-                $('html, body').animate({ scrollTop: $('#commentFormSection').offset().top }, 500);
-            } else {
-                $('#commentFormSection').slideUp();
-            }
-        });
-
-        $('#commentForm').on('submit', function (e) {
-            e.preventDefault();
-            // Implement form submission logic
-        });
-
-        $(document).on('click', '.edit-feedback', function () {
-            const feedbackItem = $(this).closest('.list-group-item');
-            const commentName = feedbackItem.find('h5').text();
-            const commentRating = feedbackItem.find('.rating').data('rating');
-            const commentMessage = feedbackItem.find('p.mb-1').text();
-
-            const isAlreadyOpen = $('#commentFormSection').is(':visible');
-
-            if (!isAlreadyOpen || $('#commentName').val() !== commentName) {
-                $('#commentName').val(commentName);
-                $('#commentRating').val(commentRating);
-                $('#commentMessage').val(commentMessage);
-                $('#commentFormSection').slideDown();
-                $('html, body').animate({ scrollTop: $('#commentFormSection').offset().top }, 500);
-            } else {
-                $('#commentFormSection').slideUp();
-            }
-        });
-
-        var map = L.map('map').setView([40.3820624, 49.877007], 15);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-
-        L.marker([40.3820624, 49.877007]).addTo(map)
-            .bindPopup("<b>Location</b><br>Address").openPopup();
+    map.on('click', function (e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        marker.setLatLng(e.latlng);
+        updateCoordinates(lat, lng);
     });
-</script> *@
+
+    marker.on('dragend', function (e) {
+        var lat = marker.getLatLng().lat;
+        var lng = marker.getLatLng().lng;
+        updateCoordinates(lat, lng);
+    });
+</script>
+
+<style>
+    .menu-head h1 {
+        font-size: 34px;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .menu h2 {
+        font-size: 26px;
+    }
+
+    .menu .established {
+        font-style: italic;
+    }
+
+    .menu h1,
+    .menu h2,
+    .menu p {
+        text-align: center;
+    }
+
+    .menu {
+        background-color: burlywood;
+        margin-left: 1rem;
+        margin-right: 1rem;
+        padding: 20px 10px 30px 10px;
+        max-width: 470px;
+        border-radius: 2%;
+    }
+
+    .menu hr {
+        height: 2px;
+        background-color: brown;
+        border-color: brown;
+    }
+
+    .menu h1,
+    .menu h2 {
+        font-family: Impact, serif;
+    }
+
+    .menu .item p {
+        display: inline-block;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        font-size: 18px;
+    }
+
+    .menu .flavor,
+    .menu .dessert {
+        text-align: left;
+        width: 75%;
+    }
+
+    .menu .price {
+        text-align: right;
+        width: 24%;
+    }
+</style>

@@ -20,8 +20,8 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">
-            <h1 class="mb-3">@Model?.Menu.Name</h1>
-            <p class="mt-3"><strong>Description: </strong>@Model?.Menu.Description</p>
+            <h1 class="mb-3">@(Model.Menu.Name ?? "Name")</h1>
+            <p class="mt-3"><strong>Description: </strong>@(Model.Menu.Description ?? "Description")</p>
         </div>
     </div>
     @if (IsAdmin)
@@ -29,7 +29,7 @@
         <a href="/Menu/Create" class="btn btn-primary w-25 mt-2 mb-3">Create new MenuItem</a>
     }
     <div class="row">
-        @foreach (var menuItem in Model?.MenuItems)
+        @foreach (var menuItem in Model.MenuItems)
         {
             <div class="col-md-3 restaurantItem mb-4">
                 <div class="card mb-4 restorantCard h-100 w-100">

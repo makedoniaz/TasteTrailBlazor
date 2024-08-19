@@ -1,52 +1,100 @@
 ﻿@page "/Login"
-@inject HttpClient Http
-@inject NavigationManager Navigation
+
+@inject IHttpClientFactory httpClientFactory
+@inject NavigationManager navigationManager
+@inject IJSRuntime jsRuntime
+@inject ILocalStorageService localStorageService
+@inject AuthenticationStateProvider authenticationStateProvider
+
 @layout EmptyLayout
 
-<PageTitle>Login</PageTitle>
+@code {
+    private string? httpResponseErrorMessage;
+    private LoginDto loginDto = new();
 
+    private string? AlertVisibleClass => string.IsNullOrEmpty(httpResponseErrorMessage) ? "invisible" : "visible";
+
+    public class LoginDto
+    {
+        [Required(ErrorMessage = "Username/Email is required")]
+        public string LoginIdentifier { get; set; }
+
+        [Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; } 
+    }
+
+    private async Task OnLoginFormValidSubmit()
+    {
+        httpResponseErrorMessage = null;
+        var httpClient = httpClientFactory.CreateClient("BlazorPolicy");
+
+        var loginHttpResponse = await httpClient.PostAsJsonAsync("/api/Authentication/Login", loginDto);
+
+        if (!loginHttpResponse.IsSuccessStatusCode)
+        {
+            httpResponseErrorMessage = await loginHttpResponse.Content.ReadAsStringAsync();
+                 return;
+        }
+
+        var refreshAccessTokens = await loginHttpResponse.Content.ReadFromJsonAsync<AccessToken>();
+            Console.WriteLine(refreshAccessTokens);  
+
+        if (refreshAccessTokens is null)
+        {
+            httpResponseErrorMessage = "Error during login. Please try again.";
+            return;
+        }
+
+        await localStorageService.SetItemAsStringAsync("jwt", refreshAccessTokens.Jwt);
+        await localStorageService.SetItemAsStringAsync("refresh", refreshAccessTokens.Refresh.ToString());
+
+        await authenticationStateProvider.GetAuthenticationStateAsync();
+
+        navigationManager.NavigateTo("/", true);
+    }
+}
+
+<PageTitle>Login</PageTitle>
 
 <div class="container">
     <a href="/" class="back-link"><i class="fas fa-arrow-left"></i></a>
     <div class="wrapper">
         <div class="title"><span>Login Form</span></div>
 
+        <EditForm Model="loginDto" OnValidSubmit="OnLoginFormValidSubmit" class="editform">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-        <form asp-route="LoginEndPoint" method="post">
-            @* <div class="text-danger">@TempData["error"]</div> *@
+            <div class="@AlertVisibleClass alert alert-danger" role="alert">
+                @httpResponseErrorMessage
+            </div>
+
             <div class="mb-3">
-                <span class="text-danger" asp-validation-for="Username"></span>
-                <div class="input-group">
+                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-user"></i></span>
-                    <input type="text" class="form-control" placeholder="Username" required>
+                    <input type="text" class="form-control" placeholder="Username or Email" @bind-value="loginDto.LoginIdentifier" required>
                 </div>
             </div>
+
             <div class="mb-3">
-                <span class="text-danger" asp-validation-for="Password"></span>
-                <div class="input-group">
+                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                    <input type="password" class="form-control" placeholder="Password" required>
+                    <input type="password" class="form-control" placeholder="Password" @bind-value="loginDto.Password" required>
                 </div>
             </div>
+
             <div class="d-grid">
                 <input type="submit" class="btn btn-primary" value="Sign in">
             </div>
             <div class="text-center mt-3">
                 Not a member? <a href="/Registration">Signup now</a>
             </div>
-        </form>
+        </EditForm>
     </div>
 </div>
 
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: 'Poppins', sans-serif;
-    }
-
-    body {
+     body {
         overflow: hidden;
     }
 
@@ -59,18 +107,10 @@
         font-size: 35px;
     }
 
-    .back-link:hover {
-        text-decoration: underline;
-    }
-
-    ::selection {
-        background: rgba(26, 188, 156, 0.3);
-    }
-
     .container {
         max-width: 540px;
         padding: 40px;
-        margin: 250px auto;
+        margin: 150px auto;
     }
 
     .wrapper {
@@ -78,7 +118,7 @@
         background: #fff;
         border-radius: 5px;
         box-shadow: 0px 4px 10px 1px rgba(0, 0, 0, 0.178);
-        transition: 2s;
+        transition: 0.3s;
     }
 
     .wrapper:hover {
@@ -97,35 +137,35 @@
         justify-content: center;
     }
 
-    .wrapper form {
-        padding: 30px 25px 25px 25px;
+    .wrapper .editform {
+        padding: 10px 25px 25px 25px;
     }
 
-    .wrapper form .input-group {
+    .wrapper .editform .input-group {
         margin-bottom: 15px;
     }
 
-    .wrapper form .input-group .form-control:focus {
+    .wrapper .editform .input-group .form-control:focus {
         border-color: #1662a0;
         box-shadow: inset 0px 0px 2px 2px rgba(26, 188, 156, 0.25);
     }
 
-    .wrapper form .input-group .input-group-text {
+    .wrapper .editform .input-group .input-group-text {
         background: #1662a0;
         color: #fff;
         border: 1px solid #1662a0;
     }
 
-    .wrapper form .input-group .input-group-text i {
+    .wrapper .editform .input-group .input-group-text i {
         font-size: 18px;
     }
 
-    .wrapper form .btn-primary {
+    .wrapper .editform .btn-primary {
         background: #1662a0;
         border: 1px solid #1662a0;
     }
 
-    .wrapper form .btn-primary:hover {
+    .wrapper .editform .btn-primary:hover {
         background: #0f6bb6e5;
     }
 
@@ -142,6 +182,3 @@
         font-size: 14px;
     }
 </style>
-
-<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>

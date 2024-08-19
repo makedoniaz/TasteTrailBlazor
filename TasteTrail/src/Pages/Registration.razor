@@ -1,57 +1,94 @@
 ﻿@page "/Registration"
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@inject IHttpClientFactory httpClientFactory
+@inject NavigationManager navigationManager 
+@inject IJSRuntime jsRuntime
+@inject ILocalStorageService localStorageService
+@inject AuthenticationStateProvider authenticationStateProvider
 @layout EmptyLayout
+
+@code {
+    private string? httpResponseErrorMessage;
+    public string? AlertVisibleClass => string.IsNullOrEmpty(httpResponseErrorMessage) ? "invisible" : "visible";
+
+    public class RegistrationDto
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public RegistrationDto registrationDto { get; set; } = new();
+
+    public async Task OnRegistrationFormValidSubmit()
+    {
+        httpResponseErrorMessage = null;
+        var httpClient = httpClientFactory.CreateClient("BlazorPolicy");
+
+        var registrationHttpResponse = await httpClient.PostAsJsonAsync("/api/Authentication/Registration", registrationDto);
+
+        if (!registrationHttpResponse.IsSuccessStatusCode)
+        {
+            httpResponseErrorMessage = await registrationHttpResponse.Content.ReadAsStringAsync();
+                        Console.WriteLine(httpResponseErrorMessage); // Логирование ошибки
+
+            return;
+        }
+
+        navigationManager.NavigateTo("/Login", true);
+    }
+}
 
 <PageTitle>Registration</PageTitle>
 
-
 <div class="container">
-    @* <a href="/" class="mt-5 mb-4 p-lg-5 back-link"><i class="fas fa-arrow-left"></i></a> *@
     <a href="/" class="back-link"><i class="fas fa-arrow-left"></i></a>
     <div class="wrapper">
         <div class="title"><span>Registration Form</span></div>
-        @* <div class="text-danger">@TempData["error"]</div> *@
 
+        <EditForm Model="registrationDto" OnValidSubmit="OnRegistrationFormValidSubmit" class="editform">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-        <form asp-route="RegistrationEndpoint" method="post" enctype="multipart/form-data">
-            @*<div class="mb-4">
-            <label class="image-upload-label">
-            <i class="fas fa-image"></i>
-            Photo
-            <input class="custom-file-input" type="file" name="file-name" onchange="updateFileName(this)">
-            </label>
-            <span id="file-name">No file chosen</span>
-            <span class="text-danger" asp-validation-for="FirstName"></span>
-            </div> *@
+            <div class="@AlertVisibleClass alert alert-danger" role="alert">
+                @httpResponseErrorMessage
+            </div>
+
             <div class="mb-3">
-                <span class="text-danger" asp-validation-for="Name"></span>
+                <span class="text-danger"></span>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-user"></i></span>
-                    <input type="text" class="form-control" placeholder="Name" required>
+                    <input type="text" class="form-control" placeholder="Name" @bind-value=registrationDto.Name required>
                 </div>
             </div>
+
             <div class="mb-3">
-                <span class="text-danger" asp-validation-for="Email"></span>
+                <span class="text-danger"></span>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                    <input type="text" class="form-control" placeholder="Email" required>
+                    <input type="email" class="form-control" placeholder="Email" @bind-value=registrationDto.Email required>
                 </div>
             </div>
+
             <div class="mb-3">
-                <span class="text-danger" asp-validation-for="Password"></span>
+                <span class="text-danger"></span>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                    <input type="password" class="form-control" placeholder="Password" required>
+                    <input type="password" class="form-control" placeholder="Password" @bind-value=registrationDto.Password required>
                 </div>
             </div>
+
             <div class="d-grid">
                 <input type="submit" class="btn btn-primary" value="Sign up">
             </div>
             <div class="text-center mt-3">
-                Have already account? <a href="/Login">Login now</a>
+                Have an account? <a href="/Login">Login now</a>
             </div>
-        </form>
+        </EditForm>
     </div>
 </div>
 
@@ -95,7 +132,7 @@
         background: #fff;
         border-radius: 5px;
         box-shadow: 0px 4px 10px 1px rgba(0, 0, 0, 0.1);
-        transition: 2s;
+        transition: 0.3s;
     }
 
     .wrapper:hover {
@@ -114,35 +151,35 @@
         justify-content: center;
     }
 
-    .wrapper form {
-        padding: 30px 25px 25px 25px;
+    .wrapper .editform {
+        padding: 25px;
     }
 
-    .wrapper form .input-group {
+    .wrapper .editform .input-group {
         margin-bottom: 15px;
     }
 
-    .wrapper form .input-group .form-control:focus {
+    .wrapper .editform .input-group .form-control:focus {
         border-color: #16a085;
         box-shadow: inset 0px 0px 2px 2px rgba(26, 188, 156, 0.25);
     }
 
-    .wrapper form .input-group .input-group-text {
+    .wrapper .editform .input-group .input-group-text {
         background: #1662a0;
         color: #fff;
         border: 1px solid #1662a0;
     }
 
-    .wrapper form .input-group .input-group-text i {
+    .wrapper .editform .input-group .input-group-text i {
         font-size: 18px;
     }
 
-    .wrapper form .btn-primary {
+    .wrapper .editform .btn-primary {
         background: #1662a0;
         border: 1px solid #1662a0;
     }
 
-    .wrapper form .btn-primary:hover {
+    .wrapper .editform .btn-primary:hover {
         background: #0f6bb6e5;
     }
 
@@ -159,39 +196,17 @@
         font-size: 14px;
     }
 
-    .image-upload-label {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        border: 2px dashed #1662a0;
-        border-radius: 5px;
-        margin: 0;
-        cursor: pointer;
-        transition: background-color 0.3s ease, color 0.3s ease;
+    .alert {
+        transition: visibility 0.3s ease-in-out, opacity 0.3s ease-in-out;
     }
 
-    .image-upload-label i {
-        color: #1662a0;
-        font-size: 24px;
-        margin-right: 10px;
+    .visible {
+        visibility: visible;
+        opacity: 1;
     }
 
-    .image-upload-label:hover {
-        background-color: #1662a0;
-        color: white;
-    }
-
-    .custom-file-input {
-        display: none;
+    .invisible {
+        visibility: hidden;
+        opacity: 0;
     }
 </style>
-
-<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-<script>
-    function updateFileName(input) {
-        var fileName = input.files[0].name;
-        var fileNameDisplay = document.getElementById('file-name');
-        fileNameDisplay.textContent = fileName;
-    }
-</script>

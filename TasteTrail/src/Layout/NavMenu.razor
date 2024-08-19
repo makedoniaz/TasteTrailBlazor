@@ -1,8 +1,63 @@
-﻿<header class="header">
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService 
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService localStorageService
+ 
+@code {
+    private bool IsAuthenticated = false;
+    private bool IsAdmin = false;
+    private string Name = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity.IsAuthenticated;
+
+        if (IsAuthenticated)
+        {
+            Name = user.Identity.Name;
+           await CheckAdminRoleAsync(user);
+        }
+    }
+
+    private async Task CheckAdminRoleAsync(ClaimsPrincipal user)
+    {
+         var userId = user.FindFirst(c => c.Type == "sub")?.Value;
+       if (userId != null)
+       {
+           var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+           var roles = await httpClient.GetFromJsonAsync<List<string>>($"/api/User/GetUserRoles/{userId}");
+           
+           if (roles != null && roles.Contains("Admin"))
+           {
+               IsAdmin = true;
+           }
+       }  
+    }
+
+ 
+private async Task LogoutAsync()
+{
+     await localStorageService.RemoveItemAsync("jwt");
+    await localStorageService.RemoveItemAsync("refresh");
+
+     var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
+    authProvider.NotifyUserLogout();
+
+    // Redirect to the login page
+    NavigationManager.NavigateTo("/Login", true);
+}
+
+
+}
+<header class="header">
     <nav>
         <div class="nav_header">
             <div class="nav_logo">
-                <a href="/">
+                <a href="/"> 
                     <img src="../Assets/logo-dark.png" alt="logo" class="nav_logo-dark" />
                 </a>
             </div>
@@ -17,7 +72,7 @@
             <li><a class="nav-links" href="#contact">Contact Us</a></li>
             @if (IsAdmin)
             {
-                <li><a class="nav-links">Dashboard</a></li>
+                <li><a class="nav-link" href="/Dashboard">Dashboard</a></li>
             }
             <li class="nav-links dropdown">
                 <a class="nav-links dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
@@ -46,7 +101,7 @@
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li> <a class="dropdown-item">Log Out</a></li>
+                        <li> <a class="dropdown-item" @onclick="() => LogoutAsync()">Log Out</a></li>
                     </ul>
                 </li>
             }
@@ -56,11 +111,5 @@
             }
 
         </ul>
-    </nav> 
+    </nav>
 </header>
-
-@code {
-    private bool IsAuthenticated = false;
-    private bool IsAdmin = false;
-    private string Name = "UserName";
-}
