@@ -8,9 +8,13 @@ namespace TasteTrailBlazor.Models;
 public class Menu
 {
     public int Id { get; set; }
-    public string? Name { get; set; }
+
+    public   string Name { get; set; }
+
     public string? Description { get; set; }
+
     public int VenueId { get; set; }
-    public Venue? Venue { get; set; }
-    public List<MenuItem>? MenuItems { get; set; }
+
+    public string UserId { get; set; } 
+    public ICollection<MenuItem> MenuItems { get; set; }
 }

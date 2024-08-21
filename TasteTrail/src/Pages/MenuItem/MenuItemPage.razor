@@ -1,4 +1,4 @@
-﻿@page "/MenuItem"
+﻿@* @page "/MenuItem"
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject HttpClient Http
@@ -169,7 +169,7 @@ Menu = null
                             <div class="product-detail">
                                 <h2>@menuItem.Name</h2> @menuItem.Description
                             </div>
-                            @* <span class="back-text"> FAS </span> *@
+                            <span class="back-text"> FAS </span> 
                         </div>
                         <div class="card-body">
                             <div class="product-desc">
@@ -196,7 +196,7 @@ Menu = null
                                     </span>
                                 </span>
                             </div>
-                            @* <div class="product-properties"> <span class="product-size"> <h4>Size</h4> </span> </div> *@
+                            <div class="product-properties"> <span class="product-size"> <h4>Size</h4> </span> </div>  
                         </div>
                     </div>
                 </a>
@@ -458,4 +458,4 @@ Menu = null
     .card-btn:hover {
         opacity: 50%;
     }
-</style>
+</style> *@

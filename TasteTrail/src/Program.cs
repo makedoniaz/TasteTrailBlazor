@@ -20,6 +20,10 @@ builder.Services.AddHttpClient("BlazorPolicy", httpClient =>
 {
     httpClient.BaseAddress = new Uri("http://localhost:5172/");
 });
+builder.Services.AddHttpClient("LocalHostPolicy", httpClient =>
+{
+    httpClient.BaseAddress = new Uri("http://localhost:5188/");
+});
 builder.Services.AddBlazoredLocalStorageAsSingleton();
 
 await builder.Build().RunAsync();

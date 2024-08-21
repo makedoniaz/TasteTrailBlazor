@@ -1,4 +1,4 @@
-﻿@page "/Menu"
+﻿@* @page "/Menu"
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
@@ -41,7 +41,7 @@
                 else
                 {
                     Console.WriteLine("Failed to update menu.");
-                } *@
+                }  
             }
             catch (Exception ex)
             {
@@ -146,7 +146,7 @@
                             <div class="product-detail">
                                 <h2>@menu.Name</h2> @menu.Description
                             </div>
-                            @* <span class="back-text"> FAS </span> *@
+                            @* <span class="back-text"> FAS </span>  
                         </div>
                         <div class="card-body">
                             <div class="product-desc">
@@ -157,7 +157,7 @@
                                     @menu.Description
                                 </span>
                             </div>
-                            @* <div class="product-properties"> <span class="product-size"> <h4>Size</h4> </span> </div> *@
+                            @* <div class="product-properties"> <span class="product-size"> <h4>Size</h4> </span> </div> 
                         </div>
                     </div>
                 </a>
@@ -418,4 +418,4 @@
     .card-btn:hover {
         opacity: 50%;
     }
-</style>
+</style> *@

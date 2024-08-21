@@ -1,7 +1,9 @@
 ﻿@page "/Venue/{Id:int?}"
-@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager UriHelper
-
+@inject HttpClient Http
+@inject ILocalStorageService localStorageService
 <PageTitle>Venue Details</PageTitle>
 
 @code {
@@ -9,7 +11,7 @@
     {
         public Venue? Venue { get; set; }
         public List<Menu>? Menus { get; set; } = new List<Menu>();
-        public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
+        //public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
         public double Latitude { get; set; } = 40.3820624;
         public double Longitude { get; set; } = 49.877007;
     }
@@ -17,59 +19,67 @@
     [Parameter]
     public int Id { get; set; }
 
-    private VenueViewModel Model = new VenueViewModel
-    {
-        Venue = new Venue
-        {
-            Id = 1,
-            Name = "Text",
-            Address = "Text",
-            Description = "Text",
-            ContactNumber = "Text",
-            Email = "Text",
-            LogoUrlPath = "Text",
-            AveragePrice = 1,
-            OverallRating = 5
-        },
-        Menus = new List<Menu> {
-            new Menu{
-                Id = 1,
-                Name = "Text",
-                Description = "Text",
-                VenueId = 1,
-                Venue = new Venue(),
-                MenuItems = new List<MenuItem>{
-                    new MenuItem
-                    {
-                        Id = 1,
-                        Name = "Text",
-                        Description = "Text",
-                    }
-                }
-            },
-            new Menu{
-                Id = 2,
-                Name = "Text",
-                Description = "Text",
-                VenueId = 1,
-                Venue = new Venue(),
-                MenuItems = new List<MenuItem>{
-                    new MenuItem
-                    {
-                        Id = 2,
-                        Name = "Text",
-                        Description = "Text",
-                    }
-                }
-            }
-        }
-    };
+    private VenueViewModel Model = new VenueViewModel();
 
     private bool IsAdmin = true;
     private string path => Model.Venue?.LogoUrlPath == null ? "/images/not-available.jpg" : "../" + Model.Venue.LogoUrlPath;
     private void GoToDetails(int Id)
     {
         UriHelper.NavigateTo($"/Menu/{Id}");
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await LoadVenueData();
+    }
+
+    private async Task LoadVenueData()
+    {
+        try
+        {
+
+            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");
+            
+            // Load Venue details
+            var venueResponse = await httpClient.GetAsync($"/api/Venue/GetById?id={Id}");
+            if (venueResponse.IsSuccessStatusCode)
+            {
+                Model.Venue = await venueResponse.Content.ReadFromJsonAsync<Venue>();
+                Console.WriteLine($"Venue loaded: {Model.Venue?.Name}");
+            }
+            else
+            {
+                Console.WriteLine($"Error loading venue: {venueResponse.StatusCode} - {venueResponse.ReasonPhrase}");
+            }
+
+            // Load Menus
+            var menusResponse = await httpClient.GetAsync($"/api/Menu/GetFromTo?from=1&to=20&venueId={Id}");
+            if (menusResponse.IsSuccessStatusCode)
+            {
+                Model.Menus = await menusResponse.Content.ReadFromJsonAsync<List<Menu>>();
+                Console.WriteLine($"Menus loaded: {Model.Menus?.Count} items");
+            }
+            else
+            {
+                Console.WriteLine($"Error loading menus: {menusResponse.StatusCode} - {menusResponse.ReasonPhrase}");
+            }
+
+            // Load Feedbacks if needed
+            // var feedbacksResponse = await httpClient.GetAsync($"/api/Feedbacks/GetByVenueId?venueId={Id}");
+            // if (feedbacksResponse.IsSuccessStatusCode)
+            // {
+            // Model.Feedbacks = await feedbacksResponse.Content.ReadFromJsonAsync<List<Feedback>>();
+            // }
+            // else
+            // {
+            // Console.WriteLine($"Error: {feedbacksResponse.StatusCode} - {feedbacksResponse.ReasonPhrase}");
+            // }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
     }
 }
 

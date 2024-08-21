@@ -1,0 +1,87 @@
+﻿@* @page "/Profile"
+
+@inject IHttpClientFactory httpClientFactory
+@inject NavigationManager navigationManager
+@inject IJSRuntime jsRuntime
+@inject ILocalStorageService localStorageService
+@inject AuthenticationStateProvider authenticationStateProvider
+
+@code {
+    private UserProfileDto userProfile = new();
+    private string defaultAvatarUrl = "/images/default-avatar.png"; // Change as needed
+
+    private string? AlertVisibleClass => string.IsNullOrEmpty(httpResponseErrorMessage) ? "invisible" : "visible";
+
+    public class UserProfileDto
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string AvatarPath { get; set; } = string.Empty;
+        public bool IsAdmin { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        try
+        {
+            var token = await localStorageService.GetItemAsStringAsync("jwt");
+            var httpClient = httpClientFactory.CreateClient("BlazorPolicy");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await httpClient.GetAsync("/api/UserProfile"); // Adjust endpoint as needed
+
+            if (response.IsSuccessStatusCode)
+            {
+                userProfile = await response.Content.ReadFromJsonAsync<UserProfileDto>() ?? new UserProfileDto();
+                if (!string.IsNullOrEmpty(userProfile.AvatarPath))
+                {
+                    defaultAvatarUrl = userProfile.AvatarPath;
+                }
+            } 
+        } 
+    }
+
+    private async Task OnFileChange(ChangeEventArgs e)
+    {
+        var files = (e.Value as IEnumerable<IBrowserFile>)?.ToList();
+        if (files != null && files.Count > 0)
+        {
+            var file = files[0];
+            var fileContent = await file.RequestImageFileAsync("image/jpeg", 1000, 1000);
+            var stream = fileContent.OpenReadStream();
+
+            var httpClient = httpClientFactory.CreateClient("BlazorPolicy");
+            var formData = new MultipartFormDataContent();
+            formData.Add(new StreamContent(stream), "file", file.Name);
+
+            var response = await httpClient.PostAsync("/api/UserProfile/UploadAvatar", formData);
+
+            if (response.IsSuccessStatusCode)
+            {
+                userProfile.AvatarPath = await response.Content.ReadAsStringAsync();
+                defaultAvatarUrl = userProfile.AvatarPath;
+            }
+        }
+    }
+}
+
+<PageTitle>Profile</PageTitle>
+
+<div class="card-body row">
+    <div class="col-md-2">
+        <div class="avatar-container text-center">
+            <img id="avatarPreview" src="@defaultAvatarUrl" class="img-fluid rounded-circle avatar-image" alt="User Avatar">
+            <input type="file" id="avatarInput" name="avatarInput" accept="image/*" style="display: none;" @onchange="OnFileChange">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <h5 class="card-title mb-3">@userProfile.UserName</h5>
+        <p class="card-text"><strong>Role:</strong> @(userProfile.IsAdmin ? "Admin" : "User")</p>
+        <p class="card-text"><strong>Email:</strong> @userProfile.Email</p>
+    </div>
+</div> *@ 
