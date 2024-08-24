@@ -1,5 +1,5 @@
 ﻿@page "/Dashboard"
-@attribute [Authorize]
+@attribute [Authorize(Policy = "AdminOnly")]
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject ILocalStorageService localStorageService 
@@ -24,8 +24,9 @@
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+        var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
 
-        if (!user.Identity.IsAuthenticated)
+        if (!IsAuthorized)
         {
             NavigationManager.NavigateTo("/");
         } 
@@ -33,6 +34,33 @@
     }
 
     private async Task LoadDashboardData()
+    {
+        try
+        {
+            var token = await localStorageService.GetItemAsStringAsync("jwt");
+            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await httpClient.GetAsync("/api/AdminPanel/GetUsersCount");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Model = await response.Content.ReadFromJsonAsync<AdminDashboardViewModel>();
+                StateHasChanged();  
+                await RenderCharts();  
+            }
+            else
+            {
+                Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
+
+     @* private async Task LoadDashboardData()
     {
         try
         {
@@ -57,7 +85,7 @@
         {
             Console.WriteLine($"Error loading dashboard data: {ex.Message}");
         }
-    }
+    } *@
 
     private async Task RenderCharts()
     {

@@ -1,10 +1,11 @@
-﻿@inherits LayoutComponentBase
+﻿@attribute [Authorize(Policy = "AdminOnly")]
+@inherits LayoutComponentBase
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IAuthorizationService AuthorizationService
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService localStorageService
-@attribute [Authorize]
+ 
 @code {
     private int activeIndex = 0;
 
@@ -19,15 +20,15 @@
     }
 
     protected override async Task OnInitializedAsync()
-
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+        var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
 
-        if (!user.Identity.IsAuthenticated)
+        if (!IsAuthorized)
         {
             NavigationManager.NavigateTo("/");
-        }
+        } 
         activeIndex = 0;
     }
 
@@ -107,15 +108,15 @@
                 <li class="nav-item">
                     <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/DashboardUsers">
                         <i class="icon-head menu-icon"></i>
-                        <span class="menu-title">User Pages</span>
+                        <span class="menu-title">Users List</span>
                     </NavLink>
                 </li>
-                <li class="nav-item">
+                @* <li class="nav-item">
                     <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/">
                         <i class="icon-paper menu-icon"></i>
                         <span class="menu-title">Documentation</span>
                     </NavLink>
-                </li>
+                </li> *@
             </ul>
         </nav>
 

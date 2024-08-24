@@ -1,7 +1,7 @@
 ﻿@page "/DashboardMain"
-@attribute [Authorize]
+@attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
-
+@inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IAuthorizationService AuthorizationService
 @inject IHttpClientFactory HttpClientFactory
@@ -9,20 +9,69 @@
 @inject ILocalStorageService localStorageService
 
 @code {
+     public class AdminDashboardViewModel
+    {
+        public int TotalUsers { get; set; }
+        public int TotalFeedbacks { get; set; }
+        public int TotalVenues { get; set; }
+    }
     private bool IsAuthenticated = false;
     private string Name = string.Empty;
+    private AdminDashboardViewModel Model = new AdminDashboardViewModel();
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+        var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
 
-        if (!user.Identity.IsAuthenticated)
+        if (!IsAuthorized)
         {
             NavigationManager.NavigateTo("/");
         }
         else
         {
             Name = user.Identity.Name;
+        }
+        LoadDashboardData();
+    }
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            var token = await localStorageService.GetItemAsStringAsync("jwt");
+            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await httpClient.GetAsync("/api/AdminPanel/DashboardInfo");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Model = await response.Content.ReadFromJsonAsync<AdminDashboardViewModel>();
+                StateHasChanged();  
+                //await RenderCharts();  
+            }
+            else
+            {
+                Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
+
+    private async Task RenderCharts()
+    {
+        if (Model.TotalUsers > 0)
+        {
+            await JS.InvokeVoidAsync("renderUserChart", Model.TotalUsers);
+        }
+
+        if (Model.TotalFeedbacks > 0)
+        {
+            await JS.InvokeVoidAsync("renderFeedbackChart", Model.TotalFeedbacks);
         }
     }
 }
@@ -53,18 +102,18 @@
                     <div class="col-md-6 mb-4 stretch-card transparent">
                         <div class="card card-tale">
                             <div class="card-body">
-                                <p class="mb-4">Today’s Bookings</p>
-                                <p class="fs-30 mb-2">10</p>
-                                <p>10.00% (30 days)</p>
+                                <p class="mb-4">Total Venues</p>
+                                <p class="fs-30 mb-2">@Model.TotalVenues</p>
+                                <br/>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6 mb-4 stretch-card transparent">
                         <div class="card card-dark-blue">
                             <div class="card-body">
-                                <p class="mb-4">Total Bookings</p>
-                                <p class="fs-30 mb-2">10</p>
-                                <p>22.00% (30 days)</p>
+                                <p class="mb-4">Total Users</p>
+                                <p class="fs-30 mb-2">@Model.TotalUsers</p>
+                                <br/>
                             </div>
                         </div>
                     </div>
@@ -73,18 +122,18 @@
                     <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
                         <div class="card card-light-blue">
                             <div class="card-body">
-                                <p class="mb-4">Number of Meetings</p>
-                                <p class="fs-30 mb-2">10</p>
-                                <p>2.00% (30 days)</p>
+                                <p class="mb-4">Total Feedbacks</p>
+                                <p class="fs-30 mb-2">@Model.TotalFeedbacks</p>
+                                <br/>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6 stretch-card transparent">
                         <div class="card card-light-danger">
                             <div class="card-body">
-                                <p class="mb-4">Number of Clients</p>
-                                <p class="fs-30 mb-2">10</p>
-                                <p>0.22% (30 days)</p>
+                                <p class="mb-4">Dangers</p>
+                                <p class="fs-30 mb-2">???</p>
+                                <p>???</p>
                             </div>
                         </div>
                     </div>

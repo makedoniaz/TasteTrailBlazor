@@ -1,11 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Blazored.LocalStorage;
-using TasteTrailBlazor.Models;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Components; 
+using TasteTrailBlazor.Models;
 
 namespace TasteTrailBlazor.Providers;
 
@@ -14,16 +15,17 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
     private readonly ILocalStorageService localStorageService;
     private readonly IHttpClientFactory httpClientFactory;
     private readonly JwtSecurityTokenHandler jwtSecurityTokenHandler;
-     private readonly NavigationManager navigationManager;
+    private readonly NavigationManager navigationManager;
+
     public JwtAuthenticationStateProvider(
         ILocalStorageService localStorageService,
         IHttpClientFactory httpClientFactory,
-         NavigationManager navigationManager)
+        NavigationManager navigationManager)
     {
         this.localStorageService = localStorageService;
         this.httpClientFactory = httpClientFactory;
         this.jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-        this.navigationManager = navigationManager; 
+        this.navigationManager = navigationManager;
     }
 
     private async Task<ClaimsIdentity?> GetClaimsIdentity()
@@ -32,35 +34,34 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
         if (string.IsNullOrWhiteSpace(jwt))
             return null;
 
-        var result = await jwtSecurityTokenHandler.ValidateTokenAsync(jwt, new TokenValidationParameters
+        try
         {
-            ValidateIssuer = true,
-            ValidIssuer = "TasteTrailIdentity",
+            var result = await jwtSecurityTokenHandler.ValidateTokenAsync(jwt, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = "TasteTrailIdentity",
+                ValidateAudience = true,
+                ValidAudience = "Wolf-Street-Developers",
+                ValidateLifetime = true,
+                IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("Your_Secret_Key_Here")),
+                ClockSkew = TimeSpan.Zero
+            });
 
-            ValidateAudience = true,
-            ValidAudience = "Wolf-Street-Developers",
-
-            SignatureValidator = (token, validationParameters) => new JwtSecurityToken(token),
-
-            RequireExpirationTime = true,
-            ValidateLifetime = true,
-
-            LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires > DateTime.UtcNow,
-        });
-
-        if (!result.IsValid && result.Exception is SecurityTokenInvalidLifetimeException)
+            var tokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
+            return new ClaimsIdentity(tokenObj.Claims, "jwt");
+        }
+        catch (SecurityTokenExpiredException)
         {
             var success = await TryRefreshTokenAsync();
             if (!success)
+            {
                 return null;
+            }
 
             jwt = await localStorageService.GetItemAsStringAsync("jwt");
             var newTokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
             return new ClaimsIdentity(newTokenObj.Claims, "jwt");
         }
-
-        var tokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
-        return new ClaimsIdentity(tokenObj.Claims, "jwt");
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -69,7 +70,12 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
         if (claimsIdentity == null)
         {
-            this.navigationManager.NavigateTo("/");
+            var result = await TryRefreshTokenAsync();
+            if (!result)
+            {
+                this.navigationManager.NavigateTo("/");
+                await NotifyUserLogout();
+            }
         }
 
         var claimsPrincipal = claimsIdentity == null
@@ -103,11 +109,13 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
         return true;
     }
 
-    public void NotifyUserLogout()
+    public async Task NotifyUserLogout()
     {
         var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
         var authState = Task.FromResult(new AuthenticationState(anonymousUser));
         NotifyAuthenticationStateChanged(authState);
-    }
 
+        await localStorageService.RemoveItemAsync("jwt");
+        await localStorageService.RemoveItemAsync("refresh");
+    }
 }

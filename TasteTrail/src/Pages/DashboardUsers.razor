@@ -1,11 +1,12 @@
 ﻿@page "/DashboardUsers"
-@attribute [Authorize]
+@attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject ILocalStorageService localStorageService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
+@inject IAuthorizationService AuthorizationService
 
 @code {
     private List<UserDto> usersDto = new List<UserDto>();
@@ -17,11 +18,13 @@
         {
             var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
+            var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
 
-            if (!user.Identity.IsAuthenticated)
+            if (!IsAuthorized)
             {
                 NavigationManager.NavigateTo("/");
             }
+
             var token = await localStorageService.GetItemAsStringAsync("jwt");
 
             var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
@@ -129,6 +132,11 @@
                     {
                         updatedUser.Roles.Add(UserRoles.Admin.ToString());
                     }
+                    if (updatedUser.Roles.Contains(UserRoles.User.ToString()))
+                    {
+                        response = await httpClient.PostAsync($"/api/AdminPanel/RemoveRole?userId={userId}&roleId={(int)UserRoles.User}", null);
+                        updatedUser.Roles.Remove(UserRoles.User.ToString());
+                    }
                 }
             }
             else
@@ -161,6 +169,11 @@
                     if (updatedUser.Roles.Contains(UserRoles.Admin.ToString()))
                     {
                         updatedUser.Roles.Remove(UserRoles.Admin.ToString());
+                    }
+                    if (!updatedUser.Roles.Contains(UserRoles.User.ToString()))
+                    {
+                        response = await httpClient.PostAsync($"/api/AdminPanel/AssignRole?userId={userId}&roleId={(int)UserRoles.User}", null);
+                        updatedUser.Roles.Add(UserRoles.User.ToString());
                     }
                 }
             }
