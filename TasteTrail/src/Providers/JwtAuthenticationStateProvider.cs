@@ -5,6 +5,7 @@ using Blazored.LocalStorage;
 using TasteTrailBlazor.Models;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Components; 
 
 namespace TasteTrailBlazor.Providers;
 
@@ -13,58 +14,65 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
     private readonly ILocalStorageService localStorageService;
     private readonly IHttpClientFactory httpClientFactory;
     private readonly JwtSecurityTokenHandler jwtSecurityTokenHandler;
-
+     private readonly NavigationManager navigationManager;
     public JwtAuthenticationStateProvider(
         ILocalStorageService localStorageService,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+         NavigationManager navigationManager)
     {
         this.localStorageService = localStorageService;
         this.httpClientFactory = httpClientFactory;
         this.jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+        this.navigationManager = navigationManager; 
     }
 
-private async Task<ClaimsIdentity?> GetClaimsIdentity()
-{
-    var jwt = await localStorageService.GetItemAsStringAsync("jwt");
-    if (string.IsNullOrWhiteSpace(jwt))
-        return null;
-
-    var result = await jwtSecurityTokenHandler.ValidateTokenAsync(jwt, new TokenValidationParameters
+    private async Task<ClaimsIdentity?> GetClaimsIdentity()
     {
-        ValidateIssuer = true,
-        ValidIssuer = "TasteTrailIdentity",
-
-        ValidateAudience = true,
-        ValidAudience = "Wolf-Street-Developers",
-
-        SignatureValidator = (token, validationParameters) => new JwtSecurityToken(token),
-
-        RequireExpirationTime = true,
-        ValidateLifetime = true,
-
-        LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires > DateTime.UtcNow,
-    });
-
-    if (!result.IsValid && result.Exception is SecurityTokenInvalidLifetimeException)
-    {
-        var success = await TryRefreshTokenAsync();
-        if (!success)
+        var jwt = await localStorageService.GetItemAsStringAsync("jwt");
+        if (string.IsNullOrWhiteSpace(jwt))
             return null;
 
-         jwt = await localStorageService.GetItemAsStringAsync("jwt");
-        var newTokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
-        return new ClaimsIdentity(newTokenObj.Claims, "jwt");
-    }
+        var result = await jwtSecurityTokenHandler.ValidateTokenAsync(jwt, new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "TasteTrailIdentity",
 
-    var tokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
-    return new ClaimsIdentity(tokenObj.Claims, "jwt");
-}
+            ValidateAudience = true,
+            ValidAudience = "Wolf-Street-Developers",
+
+            SignatureValidator = (token, validationParameters) => new JwtSecurityToken(token),
+
+            RequireExpirationTime = true,
+            ValidateLifetime = true,
+
+            LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires > DateTime.UtcNow,
+        });
+
+        if (!result.IsValid && result.Exception is SecurityTokenInvalidLifetimeException)
+        {
+            var success = await TryRefreshTokenAsync();
+            if (!success)
+                return null;
+
+            jwt = await localStorageService.GetItemAsStringAsync("jwt");
+            var newTokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
+            return new ClaimsIdentity(newTokenObj.Claims, "jwt");
+        }
+
+        var tokenObj = jwtSecurityTokenHandler.ReadJwtToken(jwt);
+        return new ClaimsIdentity(tokenObj.Claims, "jwt");
+    }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         var claimsIdentity = await GetClaimsIdentity();
 
-        var claimsPrincipal = claimsIdentity == null 
+        if (claimsIdentity == null)
+        {
+            this.navigationManager.NavigateTo("/");
+        }
+
+        var claimsPrincipal = claimsIdentity == null
             ? new ClaimsPrincipal(new ClaimsIdentity())
             : new ClaimsPrincipal(claimsIdentity);
 
@@ -72,34 +80,34 @@ private async Task<ClaimsIdentity?> GetClaimsIdentity()
     }
 
     private async Task<bool> TryRefreshTokenAsync()
-{
-    var refreshToken = await localStorageService.GetItemAsStringAsync("refresh");
+    {
+        var refreshToken = await localStorageService.GetItemAsStringAsync("refresh");
 
-    if (string.IsNullOrWhiteSpace(refreshToken))
-        return false;
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return false;
 
-    var httpClient = httpClientFactory.CreateClient("IdentityService");
-    var response = await httpClient.PutAsJsonAsync("/api/Authentication/UpdateToken", new { RefreshToken = refreshToken });
+        var httpClient = httpClientFactory.CreateClient("IdentityService");
+        var response = await httpClient.PutAsJsonAsync("/api/Authentication/UpdateToken", new { RefreshToken = refreshToken });
 
-    if (!response.IsSuccessStatusCode)
-        return false;
+        if (!response.IsSuccessStatusCode)
+            return false;
 
-    var accessToken = await response.Content.ReadFromJsonAsync<AccessToken>();
+        var accessToken = await response.Content.ReadFromJsonAsync<AccessToken>();
 
-    if (accessToken == null)
-        return false;
+        if (accessToken == null)
+            return false;
 
-    await localStorageService.SetItemAsStringAsync("jwt", accessToken.Jwt);
-    await localStorageService.SetItemAsStringAsync("refresh", accessToken.Refresh.ToString());
+        await localStorageService.SetItemAsStringAsync("jwt", accessToken.Jwt);
+        await localStorageService.SetItemAsStringAsync("refresh", accessToken.Refresh.ToString());
 
-    return true;
-}
+        return true;
+    }
 
-public void NotifyUserLogout()
-{
-    var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
-    var authState = Task.FromResult(new AuthenticationState(anonymousUser));
-    NotifyAuthenticationStateChanged(authState);
-}
+    public void NotifyUserLogout()
+    {
+        var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
+        var authState = Task.FromResult(new AuthenticationState(anonymousUser));
+        NotifyAuthenticationStateChanged(authState);
+    }
 
 }

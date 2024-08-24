@@ -1,18 +1,27 @@
 ﻿@page "/DashboardUsers"
+@attribute [Authorize]
 @layout DashBoardLayout
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject ILocalStorageService localStorageService
+@inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
 
 @code {
     private List<UserDto> usersDto = new List<UserDto>();
     private bool isLoading = true;
- 
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (!user.Identity.IsAuthenticated)
+            {
+                NavigationManager.NavigateTo("/");
+            }
             var token = await localStorageService.GetItemAsStringAsync("jwt");
 
             var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
@@ -108,7 +117,8 @@
             var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await httpClient.PostAsync($"/api/AdminPanel/AssignRole?userId={userId}&roleId={(int)UserRoles.Admin}", null);
+            var response = await httpClient.PostAsync($"/api/AdminPanel/AssignRole?userId={userId}&roleId={(int)UserRoles.Admin}",
+            null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -140,7 +150,8 @@
             var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await httpClient.PostAsync($"/api/AdminPanel/RemoveRole?userId={userId}&roleId={(int)UserRoles.Admin}", null);
+            var response = await httpClient.PostAsync($"/api/AdminPanel/RemoveRole?userId={userId}&roleId={(int)UserRoles.Admin}",
+            null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -210,8 +221,7 @@
                                             </label>
                                         </td>
                                         <td>
-                                            <button @onclick="() => AssignRole(user.User.Id)"
-                                                class="btn btn-info btn-sm">
+                                            <button @onclick="() => AssignRole(user.User.Id)" class="btn btn-info btn-sm">
                                                 Assign Admin
                                             </button>
                                             <button @onclick="() => RemoveRole(user.User.Id)"

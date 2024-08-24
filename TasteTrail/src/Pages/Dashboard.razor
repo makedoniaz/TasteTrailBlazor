@@ -1,8 +1,10 @@
 ﻿@page "/Dashboard"
+@attribute [Authorize]
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
-@inject ILocalStorageService localStorageService
-@inject AuthenticationStateProvider authenticationStateProvider
+@inject ILocalStorageService localStorageService 
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -20,6 +22,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/");
+        } 
         await LoadDashboardData();
     }
 

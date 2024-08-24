@@ -21302,7 +21302,7 @@ code {
   top: 0;
   width: 100%;
   z-index: 9999;
-  background: #000;
+  background: #1e1e1e;
 }
 #proBanner .card-body-padding {
   padding-top: 0.55rem;
@@ -22678,7 +22678,7 @@ code {
 }
 
 /* Dropdowns */
-.dropdown .dropdown-toggle:after {
+.dropdown   {
   border-top: 0;
   border-right: 0;
   border-left: 0;
@@ -23914,10 +23914,12 @@ table.dataTable tbody td.select-checkbox:after {
   -ms-transition: width 0.25s ease, background 0.25s ease;
 }
 .sidebar .nav {
+  width: 100%;
   overflow: hidden;
   flex-wrap: nowrap;
   flex-direction: column;
-  margin-bottom: 60px;
+  position: relative; 
+   margin-bottom: 200000px; 
 }
 .sidebar .nav .nav-item {
   -webkit-transition-duration: 0.25s;
