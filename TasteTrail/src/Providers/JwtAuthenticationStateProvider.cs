@@ -73,8 +73,8 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
             var result = await TryRefreshTokenAsync();
             if (!result)
             {
-                this.navigationManager.NavigateTo("/");
-                await NotifyUserLogout();
+                // this.navigationManager.NavigateTo("/");
+                // await NotifyUserLogout();
             }
         }
 

@@ -1,16 +1,14 @@
-﻿@* @page "/Profile"
+﻿@page "/Profile"
 
 @inject IHttpClientFactory httpClientFactory
-@inject NavigationManager navigationManager
+@inject NavigationManager NavigationManager
 @inject IJSRuntime jsRuntime
 @inject ILocalStorageService localStorageService
-@inject AuthenticationStateProvider authenticationStateProvider
-
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
 @code {
     private UserProfileDto userProfile = new();
     private string defaultAvatarUrl = "/images/default-avatar.png"; // Change as needed
-
-    private string? AlertVisibleClass => string.IsNullOrEmpty(httpResponseErrorMessage) ? "invisible" : "visible";
 
     public class UserProfileDto
     {
@@ -22,28 +20,37 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+
+        if (!IsAuthorized)
+        {
+            NavigationManager.NavigateTo("/");
+        }
         await LoadUserProfile();
     }
+
 
     private async Task LoadUserProfile()
     {
         try
         {
-            var token = await localStorageService.GetItemAsStringAsync("jwt");
-            var httpClient = httpClientFactory.CreateClient("BlazorPolicy");
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
 
-            var response = await httpClient.GetAsync("/api/UserProfile"); // Adjust endpoint as needed
-
-            if (response.IsSuccessStatusCode)
-            {
-                userProfile = await response.Content.ReadFromJsonAsync<UserProfileDto>() ?? new UserProfileDto();
-                if (!string.IsNullOrEmpty(userProfile.AvatarPath))
+            userProfile = new UserProfileDto
                 {
-                    defaultAvatarUrl = userProfile.AvatarPath;
-                }
-            } 
-        } 
+                    AvatarPath = "",
+                    UserName = user.Identity?.Name ?? "",
+                    Email = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "",
+                    IsAdmin = user.IsInRole("Admin")
+                };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
     }
 
     private async Task OnFileChange(ChangeEventArgs e)
@@ -75,8 +82,10 @@
 <div class="card-body row">
     <div class="col-md-2">
         <div class="avatar-container text-center">
-            <img id="avatarPreview" src="@defaultAvatarUrl" class="img-fluid rounded-circle avatar-image" alt="User Avatar">
-            <input type="file" id="avatarInput" name="avatarInput" accept="image/*" style="display: none;" @onchange="OnFileChange">
+            <img id="avatarPreview" src="@defaultAvatarUrl" class="img-fluid rounded-circle avatar-image"
+                alt="User Avatar">
+            <input type="file" id="avatarInput" name="avatarInput" accept="image/*" style="display: none;"
+                @onchange="OnFileChange">
         </div>
     </div>
     <div class="col-md-3">
@@ -84,4 +93,4 @@
         <p class="card-text"><strong>Role:</strong> @(userProfile.IsAdmin ? "Admin" : "User")</p>
         <p class="card-text"><strong>Email:</strong> @userProfile.Email</p>
     </div>
-</div> *@ 
+</div>

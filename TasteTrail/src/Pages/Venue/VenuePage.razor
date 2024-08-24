@@ -23,8 +23,7 @@
     {
         try
         {
-            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy"); 
-            Console.WriteLine($"Text");
+            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");  
             var response = await httpClient.GetAsync("/api/Venue/GetFromTo?from=1&to=20");
 
             if (response.IsSuccessStatusCode)

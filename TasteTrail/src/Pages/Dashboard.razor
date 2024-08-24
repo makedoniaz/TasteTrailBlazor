@@ -1,4 +1,4 @@
-﻿@page "/Dashboard"
+﻿@* @page "/Dashboard"
 @attribute [Authorize(Policy = "AdminOnly")]
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
@@ -85,7 +85,7 @@
         {
             Console.WriteLine($"Error loading dashboard data: {ex.Message}");
         }
-    } *@
+    } 
 
     private async Task RenderCharts()
     {
@@ -191,4 +191,4 @@
             }
         });
     };
-</script>
+</script> *@

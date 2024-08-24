@@ -31,7 +31,7 @@ public class Venue
 
     public ICollection<Feedback> Feedbacks { get; set; }
 
-    public required string UserId { get; set; }
+    public string UserId { get; set; }
 }
 
 public class VenuePhoto
@@ -40,5 +40,5 @@ public class VenuePhoto
 
     public int VenueId { get; set; }
 
-    public required string PhotoUrlPath { get; set; }
+    public string PhotoUrlPath { get; set; }
 }

@@ -1,6 +1,8 @@
-﻿@* @page "/Venue/Create"
+﻿@page "/Venue/Create"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject IHttpClientFactory HttpClientFactory
+@inject ILocalStorageService localStorageService
 
 <PageTitle>Create Venue</PageTitle>
 
@@ -9,44 +11,61 @@
     private Venue NewVenue = new Venue();
     private string? FileName = "Upload Logo";
 
-    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    @* private async Task HandleFileUpload(InputFileChangeEventArgs e)
     {
         var file = e.File;
         if (file != null)
         {
             using (var stream = file.OpenReadStream())
             {
-                // Logic to handle file upload
                 var content = new StreamContent(stream);
                 var formData = new MultipartFormDataContent();
                 formData.Add(content, "logo", file.Name);
 
-                var response = await Http.PostAsync("api/venue/uploadlogo", formData);
+                var response = await Http.PostAsync("api/VenueLogo/Create", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     FileName = file.Name;
-                    // Update LogoUrlPath if needed
                 }
                 else
                 {
-                    // Handle error
+                    Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
                 }
             }
         }
-    }
+    } *@
 
     private async Task CreateVenue()
     {
-        var response = await Http.PostAsJsonAsync("api/venue", NewVenue);
-        if (response.IsSuccessStatusCode)
+        try
         {
-            Navigation.NavigateTo("/Venue");
+            var token = await localStorageService.GetItemAsStringAsync("jwt");
+            if (string.IsNullOrEmpty(token))
+            {
+                Console.WriteLine("Error: Token is null or empty");
+                return;
+            }
+
+            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await httpClient.PostAsJsonAsync("api/Venue/Create", NewVenue);
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/Venue");
+            }
+            else
+            {
+                Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Handle error
+            Console.WriteLine($"Exception: {ex.Message}");
         }
     }
+
 }
 
 <div class="container h-100 mb-5">
@@ -131,4 +150,4 @@
     .createForm button:hover {
         background-color: #4cae4c;
     }
-</style> *@
+</style>

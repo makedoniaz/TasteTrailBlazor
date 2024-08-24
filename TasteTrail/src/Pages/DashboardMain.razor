@@ -1,12 +1,12 @@
-﻿@page "/DashboardMain"
+﻿@page "/Dashboard"
 @attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IAuthorizationService AuthorizationService
 @inject IHttpClientFactory HttpClientFactory
-@inject NavigationManager NavigationManager
 @inject ILocalStorageService localStorageService
+@inject NavigationManager NavigationManager
 
 @code {
      public class AdminDashboardViewModel
@@ -15,6 +15,11 @@
         public int TotalFeedbacks { get; set; }
         public int TotalVenues { get; set; }
     }
+    public class UsersCountResponse
+{
+    public int UsersCount { get; set; }
+}
+    
     private bool IsAuthenticated = false;
     private string Name = string.Empty;
     private AdminDashboardViewModel Model = new AdminDashboardViewModel();
@@ -43,11 +48,12 @@
             var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var response = await httpClient.GetAsync("/api/AdminPanel/DashboardInfo");
+            var response = await httpClient.GetAsync("/api/AdminPanel/GetUsersCount");
 
             if (response.IsSuccessStatusCode)
             {
-                Model = await response.Content.ReadFromJsonAsync<AdminDashboardViewModel>();
+                var result = await response.Content.ReadFromJsonAsync<UsersCountResponse>();
+                Model.TotalUsers = result.UsersCount;  
                 StateHasChanged();  
                 //await RenderCharts();  
             }
@@ -55,6 +61,23 @@
             {
                 Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
             }
+            
+             httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");
+             response = await httpClient.GetAsync("/api/Venue/GetCount");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var count = await response.Content.ReadFromJsonAsync<int>();
+                Model.TotalVenues = count;
+                StateHasChanged();  
+                //await RenderCharts();  
+            }
+            else
+            {
+                Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+            }
+
+
         }
         catch (Exception ex)
         {
