@@ -43,8 +43,7 @@
     {
         if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
         {
-            await jwtProvider.LogoutAsync();
-            NavigationManager.NavigateTo("/Login", true);
+            await jwtProvider.LogoutAsync(); 
         }
     }
 }

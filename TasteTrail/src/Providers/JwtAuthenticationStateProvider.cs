@@ -158,7 +158,7 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
         var response = await httpClient.PutAsJsonAsync(
             "/api/Authentication/UpdateToken",
-            new { Refresh = Guid.Parse(refreshToken!) }
+            refreshToken
         );
 
         if (!response.IsSuccessStatusCode)
@@ -175,8 +175,8 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
             return false;
         }
 
-        Console.WriteLine($"New JWT: {accessToken.Jwt}");
-        Console.WriteLine($"New Refresh Token: {accessToken.Refresh}");
+        // Console.WriteLine($"New JWT: {accessToken.Jwt}");
+        // Console.WriteLine($"New Refresh Token: {accessToken.Refresh}");
 
         await this._localStorageService.SetItemAsStringAsync("jwt", accessToken.Jwt!);
         await this._localStorageService.SetItemAsStringAsync(
@@ -237,12 +237,16 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
             "Bearer",
             token
         );
-        await httpClient.PatchAsJsonAsync(
+        var response = await httpClient.PatchAsJsonAsync(
             "/api/Authentication/Logout",
-            new { Refresh = Guid.Parse(refreshToken!) }
+            refreshToken
         );
 
-        await NotifyUserLogout();
+        if (response.IsSuccessStatusCode)
+        {
+            await NotifyUserLogout();
+            this._navigationManager.NavigateTo("/Login");
+        }
     }
 
     public async Task NotifyUserLogout()
