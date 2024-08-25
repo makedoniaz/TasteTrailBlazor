@@ -50,6 +50,24 @@ builder.Services.AddScoped<IVenueService>(provider =>
     var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
     return new VenueService(localStorageService, httpClientFactory);
 });
+builder.Services.AddScoped<IMenuService>(provider =>
+{
+    var localStorageService = provider.GetRequiredService<ILocalStorageService>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new MenuService(localStorageService, httpClientFactory);
+});
+builder.Services.AddScoped<IMenuItemService>(provider =>
+{
+    var localStorageService = provider.GetRequiredService<ILocalStorageService>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new MenuItemService(localStorageService, httpClientFactory);
+});
+builder.Services.AddScoped<IFeedbackService>(provider =>
+{
+    var localStorageService = provider.GetRequiredService<ILocalStorageService>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new FeedbackService(localStorageService, httpClientFactory);
+});
 
 builder.Services.AddBlazoredLocalStorageAsSingleton();
 

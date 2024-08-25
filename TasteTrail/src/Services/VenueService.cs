@@ -16,13 +16,13 @@ public class VenueService : IVenueService
         IHttpClientFactory httpClientFactory
     )
     {
-        _localStorageService = localStorageService;
-        _httpClientFactory = httpClientFactory;
+        this._localStorageService = localStorageService;
+        this._httpClientFactory = httpClientFactory;
     } 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await _localStorageService.GetItemAsStringAsync("jwt");
-        var client = _httpClientFactory.CreateClient("ExperincePolicy");
+        var token = await  this._localStorageService.GetItemAsStringAsync("jwt");
+        var client =  this._httpClientFactory.CreateClient("ExperincePolicy");
 
         if (!string.IsNullOrEmpty(token))
         {
@@ -38,8 +38,7 @@ public class VenueService : IVenueService
     public async Task<List<VenueDto>?> GetVenuesAsync(int from, int to)
     {
         var client = await CreateAuthenticatedClientAsync();
-        var response = await client.GetAsync($"/api/Venue/GetFromTo?from={from}&to={to}");
-
+         var response = await client.GetAsync($"/api/Venue/GetFromTo?from={from}&to={to}");
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadFromJsonAsync<List<VenueDto>>();
@@ -48,7 +47,7 @@ public class VenueService : IVenueService
         return new List<VenueDto>();
     }
 
-    public async Task<VenueDto> GetVenueByIdAsync(Guid id)
+    public async Task<VenueDto> GetVenueByIdAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.GetAsync($"/api/Venue/GetById?id={id}");
@@ -82,7 +81,7 @@ public class VenueService : IVenueService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> DeleteVenueByIdAsync(Guid id)
+    public async Task<bool> DeleteVenueByIdAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.DeleteAsync($"/api/Venue/DeleteById?id={id}");
@@ -98,7 +97,7 @@ public class VenueService : IVenueService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> UploadVenueLogoAsync(Guid venueId, IFormFile logo)
+    public async Task<bool> UploadVenueLogoAsync(int venueId, IFormFile logo)
     {
         var client = await CreateAuthenticatedClientAsync();
         using var content = new MultipartFormDataContent();

@@ -1,15 +1,17 @@
-﻿@* @page "/Venue/{Id:int?}"
+﻿ @page "/Venue/{Id:int?}"
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager UriHelper
 @inject HttpClient Http
 @inject ILocalStorageService localStorageService
+@inject IVenueService IVenueService
+
 <PageTitle>Venue Details</PageTitle>
 
 @code {
     public class VenueViewModel
     {
-        public Venue? Venue { get; set; }
+        public VenueDto? Venue { get; set; }
         public List<Menu>? Menus { get; set; } = new List<Menu>();
         //public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
         public double Latitude { get; set; } = 40.3820624;
@@ -19,10 +21,7 @@
     [Parameter]
     public int Id { get; set; }
 
-    private VenueViewModel Model = new VenueViewModel();
-
-    private bool IsAdmin = true;
-    private string path => Model.Venue?.LogoUrlPath == null ? "/images/not-available.jpg" : "../" + Model.Venue.LogoUrlPath;
+    private VenueViewModel Model = new VenueViewModel(); 
     private void GoToDetails(int Id)
     {
         UriHelper.NavigateTo($"/Menu/{Id}");
@@ -36,52 +35,23 @@
     private async Task LoadVenueData()
     {
         try
-        {
-
-            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");
-            
-            // Load Venue details
-            var venueResponse = await httpClient.GetAsync($"/api/Venue/GetById?id={Id}");
-            if (venueResponse.IsSuccessStatusCode)
+        { 
+            Model.Venue = await IVenueService.GetVenueByIdAsync(Id);
+            if (Model.Venue != null)
             {
-                Model.Venue = await venueResponse.Content.ReadFromJsonAsync<Venue>();
                 Console.WriteLine($"Venue loaded: {Model.Venue?.Name}");
             }
-            else
+ 
+            @* Model.Menus = await IVenueService.GetMenusByVenueIdAsync(Id);
+            if (Model.Menus != null)
             {
-                Console.WriteLine($"Error loading venue: {venueResponse.StatusCode} - {venueResponse.ReasonPhrase}");
-            }
-
-            // Load Menus
-            var menusResponse = await httpClient.GetAsync($"/api/Menu/GetFromTo?from=1&to=20&venueId={Id}");
-            if (menusResponse.IsSuccessStatusCode)
-            {
-                Model.Menus = await menusResponse.Content.ReadFromJsonAsync<List<Menu>>();
-                Console.WriteLine($"Menus loaded: {Model.Menus?.Count} items");
-            }
-            else
-            {
-                Console.WriteLine($"Error loading menus: {menusResponse.StatusCode} - {menusResponse.ReasonPhrase}");
-            }
-
-            Console.WriteLine(Model.Venue.Name);
-
-            // Load Feedbacks if needed
-            // var feedbacksResponse = await httpClient.GetAsync($"/api/Feedbacks/GetByVenueId?venueId={Id}");
-            // if (feedbacksResponse.IsSuccessStatusCode)
-            // {
-            // Model.Feedbacks = await feedbacksResponse.Content.ReadFromJsonAsync<List<Feedback>>();
-            // }
-            // else
-            // {
-            // Console.WriteLine($"Error: {feedbacksResponse.StatusCode} - {feedbacksResponse.ReasonPhrase}");
-            // }
-
+                Console.WriteLine($"Menus loaded: {Model.Menus.Count} items");
+            } *@
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
-        }
+        } 
     }
 }
 
@@ -92,7 +62,7 @@
             <div id="photoSlideshow" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
                     <div class="carousel-item active">
-                        <img src="@path" class="d-block w-100" alt="Venue Photo">
+                        <img src="@Model.Venue.LogoUrlPath" class="d-block w-100" alt="Venue Photo">
                     </div>
                 </div>
             </div>
@@ -102,7 +72,7 @@
             <!-- Rating -->
             <div class="rating" data-rating="@Model?.Venue.OverallRating">
                 <span class="text-warning">
-                    @* @for (var i = 0; i < (Model?.Venue.OverallRating); i++)
+                    @for (var i = 0; i < (Model?.Venue.OverallRating); i++)
                     {
                         <i class="fas fa-star star"></i>
                     }
@@ -122,11 +92,7 @@
             <p class="mt-3"><strong>Address: </strong>@Model?.Venue.Address</p>
             <p class="mt-3"><strong>Contact Number: </strong>@Model?.Venue.ContactNumber</p>
             <p class="mt-3"><strong>Average Price: </strong>@Model?.Venue.AveragePrice</p>
-
-            @if (IsAdmin)
-            {
-                <a href="CreateMenuPage/@Model?.Venue?.Id" class="btn btn-primary w-25 mt-5 mb-3">Create new Menu</a>
-            }
+ 
         </div>
     </div>
     <hr class="mt-5">
@@ -198,6 +164,10 @@
 </script>
 
 <style>
+    .container
+    {
+        margin-bottom: 250px;
+    }
     .menu-head h1 {
         font-size: 34px;
         margin-top: 0;
@@ -255,4 +225,4 @@
         text-align: right;
         width: 24%;
     }
-</style> *@
+</style> 
