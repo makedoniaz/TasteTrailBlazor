@@ -1,4 +1,4 @@
-﻿@page "/Venue/Create"
+﻿@* @page "/Venue/Create"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IHttpClientFactory HttpClientFactory
@@ -7,74 +7,69 @@
 <PageTitle>Create Venue</PageTitle>
 
 @code {
-
-    private Venue NewVenue = new Venue();
+    private VenueCreateDto NewVenue = new VenueCreateDto();
+    private IBrowserFile? LogoFile { get; set; }
     private string? FileName = "Upload Logo";
 
-    @* private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
         var file = e.File;
-        if (file != null)
-        {
-            using (var stream = file.OpenReadStream())
-            {
-                var content = new StreamContent(stream);
-                var formData = new MultipartFormDataContent();
-                formData.Add(content, "logo", file.Name);
+        FileName = file.Name;
+        LogoFile = file;
+    }
 
-                var response = await Http.PostAsync("api/VenueLogo/Create", formData);
-                if (response.IsSuccessStatusCode)
-                {
-                    FileName = file.Name;
-                }
-                else
-                {
-                    Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
-                }
-            }
-        }
-    } *@
-
-    private async Task CreateVenue()
+   private async Task CreateVenue()
+{
+    try
     {
-        try
+        var token = await localStorageService.GetItemAsStringAsync("jwt");
+        if (string.IsNullOrEmpty(token))
         {
-            var token = await localStorageService.GetItemAsStringAsync("jwt");
-            if (string.IsNullOrEmpty(token))
+            Console.WriteLine("Error: Token is null or empty");
+            return;
+        }
+
+        var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using (var form = new MultipartFormDataContent())
+        {
+            if (LogoFile != null)
             {
-                Console.WriteLine("Error: Token is null or empty");
-                return;
+                var fileContent = new StreamContent(LogoFile.OpenReadStream(LogoFile.Size));
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(LogoFile.ContentType);
+                form.Add(fileContent, "logo", LogoFile.Name);
             }
 
-            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");
+            var jsonVenue = JsonSerializer.Serialize(NewVenue);
+            var venueContent = new StringContent(jsonVenue, Encoding.UTF8, "application/json");
+            form.Add(venueContent, "venue");
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await httpClient.PostAsJsonAsync("api/Venue/Create", NewVenue);
+            var response = await httpClient.PostAsync("api/Venue/Create", form);
             if (response.IsSuccessStatusCode)
             {
                 Navigation.NavigateTo("/Venue");
             }
             else
-            {
-                Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+            { 
+                Console.WriteLine(response);
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception: {ex.Message}");
-        }
     }
-
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Exception: {ex.Message}");
+    }
+}
 }
 
 <div class="container h-100 mb-5">
-    <h1 style="font-size: 1.5rem; ">Create new Venue</h1>
+    <h1 style="font-size: 1.5rem;">Create new Venue</h1>
 
-    <form @onsubmit="CreateVenue" class="createForm">
+    <form class="createForm">
         <div class="row custom-file">
             <label for="logo" class="custom-file-label">@FileName</label>
-            <InputFile OnChange="HandleFileUpload" class="custom-file-input" />
+            <InputFile class="custom-file-input" OnChange="HandleFileChange" />
         </div>
 
         <div>
@@ -107,7 +102,7 @@
             <InputTextArea @bind-Value="NewVenue.Description" class="form-control" />
         </div>
 
-        <button type="submit" class="btn btn-primary">Add Venue</button>
+        <button type="button" @onclick="CreateVenue" class="btn btn-primary">Add Venue</button>
     </form>
 </div>
 
@@ -150,4 +145,4 @@
     .createForm button:hover {
         background-color: #4cae4c;
     }
-</style>
+</style> *@

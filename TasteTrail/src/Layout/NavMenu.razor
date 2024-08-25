@@ -1,8 +1,7 @@
-﻿@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IAuthorizationService AuthorizationService
-@inject IHttpClientFactory HttpClientFactory
+﻿@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
-@inject ILocalStorageService localStorageService
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject IUserService IUserService
 
 @code {
     private bool IsAuthenticated = false;
@@ -11,60 +10,46 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        IsAuthenticated = user.Identity.IsAuthenticated;
-
-        if (IsAuthenticated)
+        if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
         {
-            Name = user.Identity.Name;
-            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            Console.WriteLine(userId);
+            var authState = await jwtProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
 
-            await CheckAdminRoleAsync(userId);
+            IsAuthenticated = user.Identity.IsAuthenticated;
+
+            if (IsAuthenticated)
+            { 
+                Name = user.Identity.Name;
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                await CheckAdminRoleAsync(userId);
+            }
         }
     }
 
     private async Task CheckAdminRoleAsync(string userId)
     {
-         if (userId != null)
+        if (userId != null)
         {
-            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
+            var user = await IUserService.GetUserRolesAsync(userId);
 
-            var response = await httpClient.GetAsync($"/api/User/GetUserRoles/{userId}");
-
-            if (response.IsSuccessStatusCode)
+            if (user != null && user.Roles != null && user.Roles.Contains("Admin"))
             {
-                var dto = await response.Content.ReadFromJsonAsync<UserDto>();
-
-                if (dto?.Roles != null && dto.Roles.Contains("Admin"))
-                {
-                    IsAdmin = true;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Failed to retrieve user roles.");
+                IsAdmin = true;
             }
         }
     }
 
-
     private async Task LogoutAsync()
     {
-        await localStorageService.RemoveItemAsync("jwt");
-        await localStorageService.RemoveItemAsync("refresh");
-
-        var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
-        authProvider.NotifyUserLogout();
-
-        // Redirect to the login page
-        NavigationManager.NavigateTo("/Login", true);
+        if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+        {
+            await jwtProvider.LogoutAsync();
+            NavigationManager.NavigateTo("/Login", true);
+        }
     }
-
-
 }
+
+
 <header class="header">
     <nav>
         <div class="nav_header">
@@ -95,10 +80,10 @@
                         <a class="nav-link" href="/Venue">Venues</a>
                     </li>
                     @* <li class="nav-links">
-                        <a class="nav-link" href="/Menu">Menu Page</a>
+                    <a class="nav-link" href="/Menu">Menu Page</a>
                     </li>
                     <li class="nav-links">
-                        <a class="nav-link" href="/MenuItem">Menu Item Page</a>
+                    <a class="nav-link" href="/MenuItem">Menu Item Page</a>
                     </li> *@
                 </ul>
             </li>

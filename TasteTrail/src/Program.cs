@@ -4,27 +4,53 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using TasteTrailBlazor;
 using TasteTrailBlazor.Providers;
+using TasteTrailBlazor.Services;
+using TasteTrailBlazor.Services.Base;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
+// Accessing configuration
+var authBaseUrl = builder.Configuration["AuthBaseUrl"] ?? "http://localhost:5172/";
+var experinceBaseUrl = builder.Configuration["ExperinceBaseUrl"] ?? "http://localhost:5188/";
+
+// Registering services
+builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>(); 
 builder.Services.AddAuthorizationCore(options =>  {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// HttpClient registration using configuration settings
+builder.Services.AddHttpClient("AuthPolicy", httpClient =>
+{
+    httpClient.BaseAddress = new Uri(authBaseUrl);
+});
+builder.Services.AddHttpClient("ExperincePolicy", httpClient =>
+{
+    httpClient.BaseAddress = new Uri(experinceBaseUrl);
+});
 
 
-builder.Services.AddHttpClient("BlazorPolicy", httpClient =>
+builder.Services.AddScoped<IAdminPanelService>(provider =>
 {
-    httpClient.BaseAddress = new Uri("http://localhost:5172/");
+    var localStorageService = provider.GetRequiredService<ILocalStorageService>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new AdminPanelService(localStorageService, httpClientFactory);
 });
-builder.Services.AddHttpClient("LocalHostPolicy", httpClient =>
+builder.Services.AddScoped<IUserService>(provider =>
 {
-    httpClient.BaseAddress = new Uri("http://localhost:5188/");
+    var localStorageService = provider.GetRequiredService<ILocalStorageService>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new UserService(localStorageService, httpClientFactory);
 });
+builder.Services.AddScoped<IVenueService>(provider =>
+{
+    var localStorageService = provider.GetRequiredService<ILocalStorageService>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new VenueService(localStorageService, httpClientFactory);
+});
+
 builder.Services.AddBlazoredLocalStorageAsSingleton();
 
 await builder.Build().RunAsync();

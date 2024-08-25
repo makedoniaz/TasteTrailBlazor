@@ -2,7 +2,7 @@ namespace TasteTrailBlazor.Models;
 
 public enum UserRoles
 {
-    Admin,
+    Admin = 0,
     
     User
 }

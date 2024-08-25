@@ -1,90 +1,67 @@
-﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+﻿@inject IJSRuntime JS
+@inject ILocalStorageService localStorageService
 @inject IHttpClientFactory HttpClientFactory
-@inject NavigationManager UriHelper
-@inject HttpClient Http
-@inject ILocalStorageService localStorageService 
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject IVenueService IVenueService
+ 
 @page "/Venue" 
 <PageTitle>Venue</PageTitle>
 
 @code {
-    private List<Venue> Model = new List<Venue>();
-
-    private bool IsAdmin = false;
-    private Venue? SelectedVenue { get; set; } = null;
+    private List<VenueDto> Model = new List<VenueDto>();
+    @* private bool IsAdmin = false; *@
+    private VenueDto? SelectedVenue { get; set; } = null;
     private string searchQuery = string.Empty;
 
     protected async override Task OnInitializedAsync()
     {
-        await CheckAdminRoleAsync();
+        @* await CheckAdminRoleAsync(); *@
         await LoadVenues();
     }
 
-    protected async Task LoadVenues()
+    private async Task LoadVenues()
     {
         try
         {
-            var httpClient = HttpClientFactory.CreateClient("LocalHostPolicy");  
-            var response = await httpClient.GetAsync("/api/Venue/GetFromTo?from=1&to=20");
-
-            if (response.IsSuccessStatusCode)
-            {
-                Model = await response.Content.ReadFromJsonAsync<List<Venue>>();
-            }
-            else
-            {
-                Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
-            }
+            Model = await IVenueService.GetVenuesAsync(1, 20);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading user data: {ex.Message}");
-        } 
+            Console.WriteLine($"Error loading venues: {ex.Message}");
+        }
     }
- 
-    private async Task UpdateVenue()
-    {
 
+    @* private async Task UpdateVenue()
+    {
         if (SelectedVenue != null)
         {
-            var response = await Http.PutAsJsonAsync($"api/venue/{SelectedVenue.Id}", SelectedVenue);
-            if (response.IsSuccessStatusCode)
-            {
-                //await LoadVenues();
-                SelectedVenue = null;
-            }
-            else
-            {
-                // Handle error
-            }
+            await IVenueService.UpdateVenueAsync(SelectedVenue);
+            SelectedVenue = null;
         }
-    }
+    } *@
 
-    private async Task DeleteVenue(int id)
+    @* private async Task DeleteVenue(string id)
     {
-        var response = await Http.DeleteAsync($"api/venue/{id}");
-        if (response.IsSuccessStatusCode)
-        {
-            //await LoadVenues();
-        }
-        else
-        {
-            // Handle error
-        }
-    }
+        await IVenueService.DeleteVenueAsync(id);
+        await LoadVenues();
+    } *@
 
     private void FilterVenues()
     {
         if (string.IsNullOrEmpty(searchQuery))
         {
-            Model = Model.Where(v => true).ToList();
+            // Show all venues
+            LoadVenues();
         }
         else
         {
+            // Filter based on search query
             Model = Model.Where(v => v.Name?.ToLower().Contains(searchQuery.ToLower()) == true).ToList();
         }
     }
-
-    private void ShowUpdateForm(Venue venue)
+@* 
+    private void ShowUpdateForm(VenueDto venue)
     {
         SelectedVenue = venue;
     }
@@ -92,42 +69,23 @@
     private void HideUpdateForm()
     {
         SelectedVenue = null;
-    }
+    } *@
 
-    private void GoToDetails(int Id)
+    private void GoToDetails(string id)
     {
-        UriHelper.NavigateTo($"/Venue/{Id}");
+        NavigationManager.NavigateTo($"/Venue/{id}");
     }
 
-    private async Task CheckAdminRoleAsync()
+    @* private async Task CheckAdminRoleAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId != null)
+        if (user != null && user.IsInRole("Admin"))
         {
-            var httpClient = HttpClientFactory.CreateClient("BlazorPolicy");
-
-            var response = await httpClient.GetAsync($"/api/User/GetUserRoles/{userId}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = await response.Content.ReadFromJsonAsync<UserDto>();
-
-                if (dto?.Roles != null && dto.Roles.Contains("Admin"))
-                {
-                    IsAdmin = true;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Failed to retrieve user roles.");
-            }
+            IsAdmin = true;
         }
-    }
-
+    } *@
 }
-
 <div class="container h-100 mb-5 mt-2">
     <h1 style="font-size: 1.5rem; ">Search Venue</h1>
     <div class="column justify-content-center">
@@ -141,7 +99,7 @@
             </div>
         </div>
     </div>
-
+@* 
     @if (IsAdmin)
     {
         <a href="/Venue/Create" class="btn btn-add btn-primary mt-2 mb-3">
@@ -150,7 +108,7 @@
                     d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z" />
             </svg>
         </a>
-    }
+    } *@
 
     @if (!Model.Any())
     {
@@ -166,7 +124,7 @@
                 <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(venue.Id)">
                     <div class="card m-2">
                         <div class="card-head">
-                            @if (IsAdmin)
+                            @* @if (IsAdmin)
                             {
                                 <button class="card-btn" @onclick="() => ShowUpdateForm(venue)">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 850">
@@ -180,7 +138,7 @@
                                             d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
                                     </svg>
                                 </button>
-                            }
+                            } *@
                             <img src="https://logo.png" alt="logo" class="card-logo">
                             <div class="product-detail">
                                 <h2>@venue.Name</h2> @venue.Description
@@ -218,7 +176,7 @@
             }
         </div>
     }
-    @if (SelectedVenue != null && IsAdmin)
+    @* @if (SelectedVenue != null && IsAdmin)
     {
         <div class="update-form">
             <h3>Update Venue</h3>
@@ -252,7 +210,7 @@
                 <button @onclick="() => HideUpdateForm()">Cancel</button>
             </div>
         </div>
-    }
+    } *@
 </div>
 
 <style>

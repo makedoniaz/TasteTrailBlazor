@@ -1,5 +1,4 @@
-@charset "UTF-8";
- 
+@charset "UTF-8"; 
 @-moz-keyframes flash {
   0% {
     opacity: 1;
@@ -21275,7 +21274,7 @@ code {
   top: 0;
   width: 100%;
   z-index: 9999;
-  background: #1e1e1e;
+  background: #1f1f1f;
 }
 #proBanner .card-body-padding {
   padding-top: 0.55rem;
@@ -23892,7 +23891,7 @@ table.dataTable tbody td.select-checkbox:after {
   flex-wrap: nowrap;
   flex-direction: column;
   position: relative; 
-   margin-bottom: 200000px; 
+   margin-bottom: 600px; 
 }
 .sidebar .nav .nav-item {
   -webkit-transition-duration: 0.25s;
@@ -24349,7 +24348,7 @@ a:active, a:link, a:hover
   cursor: pointer;
 }
 .navbar .navbar-menu-wrapper .navbar-nav .nav-item.dropdown .navbar-dropdown .dropdown-item i {
-  font-size: 17px;
+  font-size: 57px;
 }
 .navbar .navbar-menu-wrapper .navbar-nav .nav-item.dropdown .navbar-dropdown .dropdown-item .badge {
   margin-left: 2.5rem;

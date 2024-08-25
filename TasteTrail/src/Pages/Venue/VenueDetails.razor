@@ -1,4 +1,4 @@
-﻿@page "/Venue/{Id:int?}"
+﻿@* @page "/Venue/{Id:int?}"
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager UriHelper
@@ -64,6 +64,8 @@
                 Console.WriteLine($"Error loading menus: {menusResponse.StatusCode} - {menusResponse.ReasonPhrase}");
             }
 
+            Console.WriteLine(Model.Venue.Name);
+
             // Load Feedbacks if needed
             // var feedbacksResponse = await httpClient.GetAsync($"/api/Feedbacks/GetByVenueId?venueId={Id}");
             // if (feedbacksResponse.IsSuccessStatusCode)
@@ -100,7 +102,7 @@
             <!-- Rating -->
             <div class="rating" data-rating="@Model?.Venue.OverallRating">
                 <span class="text-warning">
-                    @for (var i = 0; i < (Model?.Venue.OverallRating); i++)
+                    @* @for (var i = 0; i < (Model?.Venue.OverallRating); i++)
                     {
                         <i class="fas fa-star star"></i>
                     }
@@ -110,7 +112,7 @@
                         {
                             <i class="far fa-star star"></i>
                         }
-                    }
+                    }  
                 </span>
                 <span class="badge bg-secondary ms-2">@Model.Venue.OverallRating</span>
             </div>
@@ -253,4 +255,4 @@
         text-align: right;
         width: 24%;
     }
-</style>
+</style> *@
