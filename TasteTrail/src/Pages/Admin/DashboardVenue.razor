@@ -1,4 +1,4 @@
-﻿@page "/DashboardUsers"
+﻿@page "/DashboardVenues"
 @attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
@@ -6,10 +6,10 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
-@inject IAdminPanelService IAdminPanelService
+@inject IVenueService IVenueService
 
 @code {
-    private List<UserDto> usersDto = new List<UserDto>();
+    private VenueDto venueDto = new VenueDto();
     private int from = 0;
     private int to = 10;
     private int currentPage = 1;
@@ -19,10 +19,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await LoadVenues();
     }
 
-    private async Task LoadUsers()
+    private async Task LoadVenues()
     {
         isLoading = true;
         if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
@@ -43,17 +43,12 @@
                 from = (currentPage - 1) * itemsPerPage;
                 to = from + itemsPerPage;
 
-                string currentAdminId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                usersDto = await IAdminPanelService.GetAllUsersAsync(from, to);
-                if (!string.IsNullOrEmpty(currentAdminId))
-                {
-                    usersDto = usersDto.Where(u => u.User.Id != currentAdminId).ToList();
-                }
+                venueDto = await IVenueService.GetFilteredVenuesAsync(FilterType.MostLiked);
                 StateHasChanged();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading user data: {ex.Message}");
+                Console.WriteLine($"Error loading venue data: {ex.Message}");
             }
             finally
             {
@@ -65,104 +60,7 @@
 
     private async Task Refresh()
     {
-        await LoadUsers();
-    }
-    private async Task ToggleMute(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.ToggleMuteAsync(userId);
-            if (success)
-            {
-                var updatedUser = usersDto.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.User.IsMuted = !updatedUser.User.IsMuted;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error toggling mute.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling mute: {ex.Message}");
-        }
-    }
-
-    private async Task ToggleBan(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.ToggleBanAsync(userId);
-            if (success)
-            {
-                var updatedUser = usersDto.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.User.IsBanned = !updatedUser.User.IsBanned;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error toggling ban.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling ban: {ex.Message}");
-        }
-    }
-
-    private async Task AssignRole(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.AssignRoleAsync(userId, UserRoles.Admin);
-            if (success)
-            {
-                var updatedUser = usersDto.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.Roles.Add(UserRoles.Admin.ToString());
-                    updatedUser.Roles.Remove(UserRoles.User.ToString());
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error assigning role.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error assigning role: {ex.Message}");
-        }
-    }
-
-    private async Task RemoveRole(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.RemoveRoleAsync(userId, UserRoles.Admin);
-            if (success)
-            {
-                var updatedUser = usersDto.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.Roles.Remove(UserRoles.Admin.ToString());
-                    updatedUser.Roles.Add(UserRoles.User.ToString());
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error removing role.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error removing role: {ex.Message}");
-        }
+        await LoadVenues();
     }
 
     private void GoToPage(int pageNumber)
@@ -171,7 +69,7 @@
             return;
 
         currentPage = pageNumber;
-        LoadUsers().GetAwaiter().GetResult();
+        LoadVenues().GetAwaiter().GetResult();
     }
 
     private void GoToPreviousPage()
@@ -273,70 +171,36 @@ else
                                 <thead>
                                     <tr>
                                         <th>
-                                            <button style="ml-4" @onclick="() => Refresh()"><i
-                                                    class="fa-solid fa-arrows-rotate"></i></button>
+                                            <button style="ml-4" @onclick="() => Refresh()">
+                                                <i class="fa-solid fa-arrows-rotate"></i>
+                                            </button>
                                         </th>
-                                        <th>Profile</th>
-                                        <th>Username</th>
+                                        <th>Logo</th>
+                                        <th>Name</th>
+                                        <th>Address</th>
+                                        <th>Description</th>
+                                        <th>ContactNumber</th>
                                         <th>Email</th>
-                                        <th>Roles</th>
-                                        <th>Status</th>
-                                        <th>Role Actions</th>
-                                        <th>Actions</th>
+                                        <th>Average Price</th>
+                                        <th>User Id</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var user in usersDto)
+                                    @foreach (var venue in venueDto.Entities)
                                     {
                                         <tr>
                                             <td></td>
-                                            <td>
-                                                @if (string.IsNullOrEmpty(user!.User!.AvatarPath))
-                                                {
-                                                    <img src="../images/user.png" alt="User Avatar" class="rounded-circle"
-                                                        width="50" height="50" />
-                                                }
-                                                else
-                                                {
-                                                    <img src="@user!.User!.AvatarPath" alt="User Avatar" class="rounded-circle"
-                                                        width="50" height="50" />
-                                                }
+                                            <td> 
+                                                <img src="@venue!.LogoUrlPath" alt="Venue Avatar" class="rounded-circle"
+                                                    width="50" height="50" />
                                             </td>
-                                            <td>@user!.User!.UserName</td>
-                                            <td>@user!.User!.Email</td>
-                                            <td>@string.Join(", ", user!.Roles)</td>
-                                            <td>
-                                                <label
-                                                    class="badge @(user!.User!.IsBanned ? "badge-danger" : user!.User!.IsMuted ? "badge-warning" : "badge-success")">
-                                                    @(user!.User!.IsBanned ? "Banned" : user!.User!.IsMuted ? "Muted" :
-                                                        "Active")
-                                                </label>
-                                            </td>
-                                            <td>
-                                                @if (user!.Roles.Contains("Admin"))
-                                                {
-                                                    <button @onclick="() => RemoveRole(user!.User!.Id)"
-                                                        class="btn btn-github btn-sm">
-                                                        Remove Admin
-                                                    </button>
-                                                }
-                                                else
-                                                {
-                                                    <button @onclick="() => AssignRole(user!.User!.Id)" class="btn btn-info btn-sm">
-                                                        Assign Admin
-                                                    </button>
-                                                }
-                                            </td>
-                                            <td>
-                                                <button @onclick="() => ToggleMute(user!.User!.Id)"
-                                                    class="btn btn-warning btn-sm">
-                                                    @(user!.User!.IsMuted ? "Unmute" : "Mute")
-                                                </button>
-                                                <button @onclick="() => ToggleBan(user!.User!.Id)"
-                                                    class="btn btn-danger btn-sm">
-                                                    @(user!.User!.IsBanned ? "Unban" : "Ban")
-                                                </button>
-                                            </td>
+                                            <td>@venue!.Name</td>
+                                            <td>@venue!.Address</td>
+                                            <td>@venue!.Description</td>
+                                            <td>@venue!.ContactNumber</td>
+                                            <td>@venue!.Email</td>
+                                            <td>@venue!.AveragePrice</td> 
+                                            <td>@venue!.Rating</td> 
                                         </tr>
                                     }
                                 </tbody>
@@ -369,7 +233,7 @@ else
             </div>
             <div class="paginate-details">
                 <span>-</span>
-                <span class="count">@usersDto.Count</span> <span>-</span>
+                @* <span class="count">@venuesDto.Count</span> <span>-</span> *@
             </div>
         </div>
     </div>

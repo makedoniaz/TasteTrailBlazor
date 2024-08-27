@@ -9,14 +9,11 @@
 <PageTitle>Venue</PageTitle>
 
 @code {
-
-        private int from = 0;
-    private int to = 10;
+ 
     private int currentPage = 1;
-    private int totalPages = 10;
-    private int itemsPerPage = 2;
-    private List<VenueDto> venueDto = new List<VenueDto>(); 
-    private VenueDto? SelectedVenue { get; set; } = null;
+    private int totalPages = 0;
+    private int itemsPerPage = 1; 
+    private VenueDto? venueDto { get; set; } 
     private string searchQuery = string.Empty;
     private bool isLoading = true;
 
@@ -27,54 +24,55 @@
 
     private async Task LoadVenues()
     {
+        isLoading = true;
         try
         {
-            venueDto = await IVenueService.GetVenuesAsync(1, 20);
+            venueDto = await IVenueService.GetFilteredVenuesAsync(FilterType.MostLiked, currentPage, itemsPerPage, searchQuery);
+            if (venueDto != null)
+            {
+                totalPages = venueDto.AmountOfPages;
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading venues: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     
     private void FilterVenues()
     {
-        if (string.IsNullOrEmpty(searchQuery))
-        {
-            // Show all venues
-            LoadVenues();
-        }
-        else
-        {
-            // Filter based on search query
-            venueDto = venueDto.Where(v => v.Name?.ToLower().Contains(searchQuery.ToLower()) == true).ToList();
-        }
+        currentPage = 1;
+        LoadVenues().GetAwaiter().GetResult();
     } 
-    private void GoToDetails(int id)
+  private void GoToDetails(int id)
     {
         NavigationManager.NavigateTo($"/Venue/{id}");
     } 
 
-    private void GoToPage(int pageNumber)
+    private async Task GoToPage(int pageNumber)
     {
         if (pageNumber < 1 || pageNumber > totalPages)
             return;
 
         currentPage = pageNumber;
-        LoadVenues().GetAwaiter().GetResult();
+        await LoadVenues();
     }
 
-    private void GoToPreviousPage()
+    private async Task GoToPreviousPage()
     {
         if (currentPage > 1)
-            GoToPage(currentPage - 1);
+            await GoToPage(currentPage - 1);
     }
 
-    private void GoToNextPage()
+    private async Task GoToNextPage()
     {
         if (currentPage < totalPages)
-            GoToPage(currentPage + 1);
+            await GoToPage(currentPage + 1);
     }
 
     private IEnumerable<int> GetPageNumbers()
@@ -102,7 +100,7 @@
         </div>
     </div> 
 
-    @if (!venueDto.Any())
+    @if (!venueDto.Entities.Any())
     {
         <div class="no-cards">
             <p>No venues available at the moment.</p>
@@ -111,7 +109,7 @@
     else
     {
         <div class="card-container mt-3 mt-md-5">
-            @foreach (var venue in venueDto)
+            @foreach (var venue in venueDto.Entities)
             {
                 <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(venue.Id)">
                     <div class="card m-2">
@@ -131,19 +129,19 @@
                                     @venue.Description
                                 </span>
                                 <span class="product-rating">
-                                    @for (var i = 0; i < venue.OverallRating; i++)
+                                    @for (var i = 0; i < venue.Rating; i++)
                                     {
                                         <i class="fa fa-star"></i>
                                     }
-                                    @if (venue.OverallRating < 5)
+                                    @if (venue.Rating < 5)
                                     {
-                                        for (var j = venue.OverallRating; j < 5; j++)
+                                        for (var j = venue.Rating; j < 5; j++)
                                         {
                                             <i class="fa fa-star grey"></i>
                                         }
                                     }
                                     <span class="badge">
-                                        @venue.OverallRating
+                                        @venue.Rating
                                     </span>
                                 </span>
                             </div> 
@@ -152,30 +150,28 @@
                 </a>
             }
         </div>
-        <div class="row">
+         
+         <div class="row">
             <div class="pagecontainer">
-                <button class="prevBtn"  disabled="@(!isLoading && currentPage == 1)">
-                    <span class="prevBtn-icon">
-                        <!-- SVG for previous button -->
-                    </span>
+                <button class="prevBtn" @onclick="GoToPreviousPage" disabled="@(!isLoading && currentPage == 1)"  style='@(currentPage == 1 ? "display: none;" : "")' >
+                    <span class="prevBtn-icon"><i class="fa-solid fa-angle-left m-1"></i></span>
                     <span class="prevBtn-text">Prev</span>
                 </button>
                 <div class="containerBtns">
-                    @for (int i = 1; i <= totalPages; i++)
+                    @foreach (var i in GetPageNumbers())
                     {
                         <button class="@(i == currentPage ? "activeBtn" : "")" @onclick="() => GoToPage(i)">@i</button>
                     }
                 </div>
                 <button class="nextBtn" @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
                     <span class="nextBtn-text">Next</span>
-                    <span class="nextBtn-icon">
-                        <!-- SVG for next button -->
-                    </span>
+                    <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"></i></span>
                 </button>
             </div>
             <div class="paginate-details">
                 <span>-</span>
-                <span class="count">@venueDto.Count</span> <span>-</span>
+                <span class="count">@venueDto.AmountOfEntities</span>
+                 <span>-</span>
             </div>
         </div>
     }

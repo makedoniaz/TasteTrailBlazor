@@ -1,9 +1,11 @@
-using System.Net.Http.Json;
-using TasteTrailBlazor.Dtos;
-using TasteTrailBlazor.Services.Base;
-using Microsoft.AspNetCore.Http; 
-using Blazored.LocalStorage; 
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Http;
+using TasteTrailBlazor.Dtos;
+using TasteTrailBlazor.Models;
+using TasteTrailBlazor.Services.Base;
+
 namespace TasteTrailBlazor.Services;
 
 public class VenueService : IVenueService
@@ -18,11 +20,12 @@ public class VenueService : IVenueService
     {
         this._localStorageService = localStorageService;
         this._httpClientFactory = httpClientFactory;
-    } 
+    }
+
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await  this._localStorageService.GetItemAsStringAsync("jwt");
-        var client =  this._httpClientFactory.CreateClient("ExperincePolicy");
+        var token = await this._localStorageService.GetItemAsStringAsync("jwt");
+        var client = this._httpClientFactory.CreateClient("ExperincePolicy");
 
         if (!string.IsNullOrEmpty(token))
         {
@@ -35,16 +38,30 @@ public class VenueService : IVenueService
         return client;
     }
 
-    public async Task<List<VenueDto>?> GetVenuesAsync(int from, int to)
+    public async Task<VenueDto?> GetFilteredVenuesAsync(FilterType type)
+    {
+        return await GetFilteredVenuesAsync(type, 1, 10, "");
+    }
+    public async Task<VenueDto?> GetFilteredVenuesAsync( FilterType type, int pageNumber = 1, int pageSize = 10, string searchTerm = "" )
     {
         var client = await CreateAuthenticatedClientAsync();
-         var response = await client.GetAsync($"/api/Venue/GetFromTo?from={from}&to={to}");
+
+        var filterRequest = new
+        {
+            type = (int)type,
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            searchTerm = searchTerm,
+        };
+
+        var response = await client.PostAsJsonAsync("/api/Venue/GetFiltered", filterRequest);
+
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<List<VenueDto>>();
+            return await response.Content.ReadFromJsonAsync<VenueDto>();
         }
 
-        return new List<VenueDto>();
+        return new VenueDto();
     }
 
     public async Task<VenueDto> GetVenueByIdAsync(int id)

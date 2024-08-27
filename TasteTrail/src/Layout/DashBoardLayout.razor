@@ -5,7 +5,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService localStorageService
- 
+
 @code {
     private int activeIndex = 0;
 
@@ -28,12 +28,12 @@
         if (!IsAuthorized)
         {
             NavigationManager.NavigateTo("/");
-        } 
+        }
         activeIndex = 0;
     }
 
     private void GoToAccount()
-    { 
+    {
         NavigationManager.NavigateTo("/Profile", true);
     }
 
@@ -48,7 +48,7 @@
         // Redirect to the login page
         NavigationManager.NavigateTo("/Login", true);
     }
-    
+
 }
 
 <!DOCTYPE html>
@@ -57,12 +57,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Skydash Admin</title>  
-    <link rel="stylesheet" href="../Dashboard/css/style.css"> 
+    <title>Skydash Admin</title>
+    <link rel="stylesheet" href="../Dashboard/css/style.css">
 </head>
 <style>
-    i{  
-        font-size: 20px;}
+    i {
+        font-size: 20px;
+    }
 </style>
 
 <body>
@@ -114,11 +115,17 @@
                         <span class="menu-title">Users List</span>
                     </NavLink>
                 </li>
-                @* <li class="nav-item">
-                    <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/">
-                        <i class="icon-paper menu-icon"></i>
-                        <span class="menu-title">Documentation</span>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/DashboardVenues">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Venue List</span>
                     </NavLink>
+                </li>
+                @* <li class="nav-item">
+                <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/">
+                <i class="icon-paper menu-icon"></i>
+                <span class="menu-title">Documentation</span>
+                </NavLink>
                 </li> *@
             </ul>
         </nav>
@@ -127,9 +134,60 @@
 
         @Body
     </div>
- 
+
     <script src="../Dashboard/js/jquery.cookie.js" type="text/javascript"></script>
-    <script src="../Dashboard/js/dashboard.js"></script> 
+    <script src="../Dashboard/js/dashboard.js"></script>
 </body>
 
 </html>
+
+<style>
+    .nav-link {
+        font-size: 16px;
+        padding: 10px 20px;
+    }
+
+    .sidebar {
+        width: 240px;
+    }
+
+    @@media screen and (orientation: portrait) {
+        .nav-link {
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+
+        .sidebar {
+            width: 20px !important;
+        }
+
+        .menu-title {
+            display: none;
+        }
+
+        .icon-grid,
+        .icon-head {
+            font-size: 20px;
+        }
+    }
+
+    @@media screen and (orientation: landscape) {
+        .nav-link {
+            font-size: 18px;
+            padding: 12px 24px;
+        }
+
+        .sidebar {
+            width: 240px;
+        }
+
+        .menu-title {
+            display: inline;
+        }
+
+        .icon-grid,
+        .icon-head {
+            font-size: 24px;
+        }
+    }
+</style>

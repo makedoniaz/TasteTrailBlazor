@@ -1,4 +1,4 @@
-﻿ @page "/Venue/{Id:int?}"
+﻿ @* @page "/Venue/{Id:int?}"
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager UriHelper
@@ -46,7 +46,7 @@
             if (Model.Menus != null)
             {
                 Console.WriteLine($"Menus loaded: {Model.Menus.Count} items");
-            } *@
+            }  
         }
         catch (Exception ex)
         {
@@ -225,4 +225,4 @@
         text-align: right;
         width: 24%;
     }
-</style> 
+</style>  *@

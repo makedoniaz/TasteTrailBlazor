@@ -19,18 +19,14 @@ public class Venue
 
     public string? Email { get; set; }
 
-    public string? LogoUrlPath { get; set; }
 
+    public string LogoUrlPath { get; set; } =
+        "https://tastetrailstorage.blob.core.windows.net/venue-logos/default-logo.png";
     public float AveragePrice { get; set; }
 
-    public float OverallRating { get; set; }
+    public float Rating { get; set; }
 
-    public ICollection<Menu>? Menus { get; set; }
-
-    public ICollection<VenuePhoto>? Photos { get; set; }
-
-    public ICollection<Feedback>? Feedbacks { get; set; }
-
+    public DateTime? CreationDate { get; set; } 
     public string? UserId { get; set; }
 }
 

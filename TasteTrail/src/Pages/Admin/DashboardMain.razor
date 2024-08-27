@@ -7,6 +7,8 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
 @inject IAdminPanelService IAdminPanelService
+@inject IVenueService IVenueService
+@inject IFeedbackService IFeedbackService
 
 @code {
 
@@ -39,8 +41,8 @@
         try
         {
             Model.TotalUsers = await IAdminPanelService.GetUsersCountAsync();
-            @* Model.TotalVenues = await AdminPanelService.GetVenuesCountAsync(); *@
-            @* Model.TotalFeedbacks = await AdminPanelService.GetFeedbacksCountAsync(); *@
+            Model.TotalVenues = await IVenueService.GetVenueCountAsync();
+             Model.TotalFeedbacks = await IFeedbackService.GetFeedbackCountAsync();  
 
             StateHasChanged();
             @* await RenderCharts(); *@
@@ -175,3 +177,30 @@
         </div> *@
     </div>
 </div>
+
+<style>
+    .card {
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    @@media screen and (orientation: portrait) {
+        .card {
+            padding: 15px;
+            font-size: 14px;
+        }
+        .content-wrapper {
+            padding: 10px;
+        }
+    }
+
+    @@media screen and (orientation: landscape) {
+        .card {
+            padding: 25px;
+            font-size: 16px;
+        }
+        .content-wrapper {
+            padding: 20px;
+        }
+    }
+</style>
