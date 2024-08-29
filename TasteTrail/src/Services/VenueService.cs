@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
 using TasteTrailBlazor.Dtos;
 using TasteTrailBlazor.Models;
@@ -42,7 +43,13 @@ public class VenueService : IVenueService
     {
         return await GetFilteredVenuesAsync(type, 1, 10, "");
     }
-    public async Task<VenueDto?> GetFilteredVenuesAsync( FilterType type, int pageNumber = 1, int pageSize = 10, string searchTerm = "" )
+
+    public async Task<VenueDto?> GetFilteredVenuesAsync(
+        FilterType type,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string searchTerm = ""
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
 
@@ -61,7 +68,7 @@ public class VenueService : IVenueService
             return await response.Content.ReadFromJsonAsync<VenueDto>();
         }
 
-        return new VenueDto();
+        return null;
     }
 
     public async Task<VenueDto> GetVenueByIdAsync(int id)
@@ -90,7 +97,7 @@ public class VenueService : IVenueService
         return 0;
     }
 
-    public async Task<bool> CreateVenueAsync(VenueDto venueDto)
+    public async Task<bool> CreateVenueAsync(Venue venueDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PostAsJsonAsync("/api/Venue/Create", venueDto);
@@ -106,7 +113,7 @@ public class VenueService : IVenueService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> UpdateVenueAsync(VenueDto venueDto)
+    public async Task<bool> UpdateVenueAsync(Venue venueDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PutAsJsonAsync("/api/Venue/Update", venueDto);
@@ -114,11 +121,12 @@ public class VenueService : IVenueService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> UploadVenueLogoAsync(int venueId, IFormFile logo)
+    public async Task<bool> UploadVenueLogoAsync(int venueId, IBrowserFile logo)
     {
         var client = await CreateAuthenticatedClientAsync();
         using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(logo.OpenReadStream()), "file", logo.FileName);
+        var stream = logo.OpenReadStream(maxAllowedSize: 1024 * 1024 * 15);
+        content.Add(new StreamContent(stream), "file", logo.Name); 
         var response = await client.PostAsync($"/api/VenueLogo/Create?venueId={venueId}", content);
 
         return response.IsSuccessStatusCode;

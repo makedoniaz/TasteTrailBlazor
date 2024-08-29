@@ -1,24 +1,29 @@
-﻿@inject IJSRuntime JS
+﻿@page "/Venue"
+@inject IJSRuntime JS
 @inject ILocalStorageService localStorageService
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
 @inject IVenueService IVenueService
- 
-@page "/Venue" 
+
 <PageTitle>Venue</PageTitle>
 
 @code {
- 
     private int currentPage = 1;
     private int totalPages = 0;
-    private int itemsPerPage = 1; 
-    private VenueDto? venueDto { get; set; } 
+    private int itemsPerPage = 3;
+    private VenueDto? venueDto { get; set; }
     private string searchQuery = string.Empty;
+    private FilterType selectedFilter = FilterType.OldestFirst;
     private bool isLoading = true;
 
+    private async Task Refresh()
+    {
+        await LoadVenues();
+    }
+
     protected async override Task OnInitializedAsync()
-    { 
+    {
         await LoadVenues();
     }
 
@@ -27,11 +32,11 @@
         isLoading = true;
         try
         {
-            venueDto = await IVenueService.GetFilteredVenuesAsync(FilterType.MostLiked, currentPage, itemsPerPage, searchQuery);
+            venueDto = await IVenueService.GetFilteredVenuesAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
             if (venueDto != null)
             {
                 totalPages = venueDto.AmountOfPages;
-            }
+            }  
         }
         catch (Exception ex)
         {
@@ -43,16 +48,16 @@
         }
     }
 
-    
     private void FilterVenues()
     {
         currentPage = 1;
-        LoadVenues().GetAwaiter().GetResult();
-    } 
-  private void GoToDetails(int id)
+        Refresh();
+    }
+
+    private void GoToDetails(int id)
     {
         NavigationManager.NavigateTo($"/Venue/{id}");
-    } 
+    }
 
     private async Task GoToPage(int pageNumber)
     {
@@ -85,11 +90,34 @@
             yield return i;
         }
     }
+
+    private void HandleChange(ChangeEventArgs e)
+{
+    if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
+    {
+        selectedFilter = filter;
+        FilterVenues();
+    }
 }
-<div class="container h-100 mb-5 mt-2">
-    <h1 style="font-size: 1.5rem; ">Search Venue</h1>
+}
+
+<div class="container h-100">
+    <h1 style="font-size: 1.5rem;">
+        Search Venue
+        <button style="ml-4" @onclick="Refresh">
+            <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+    </h1>
     <div class="column justify-content-center">
         <div class="row-12 row-md-8">
+            <div class="select mb-2">
+                <select @onchange="HandleChange">
+                    @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
+                    {
+                        <option value="@filter">@filter</option>
+                    }
+                </select>
+            </div>
             <div class="input-group mb-3">
                 <input type="text" @bind="searchQuery" @oninput="FilterVenues" class="form-control"
                     placeholder="Search for venues..." autocomplete="off" autofocus>
@@ -98,9 +126,9 @@
                 </button>
             </div>
         </div>
-    </div> 
+    </div>
 
-    @if (!venueDto.Entities.Any())
+    @if (venueDto?.Entities == null || !venueDto.Entities.Any())
     {
         <div class="no-cards">
             <p>No venues available at the moment.</p>
@@ -108,108 +136,130 @@
     }
     else
     {
-        <div class="card-container mt-3 mt-md-5">
-            @foreach (var venue in venueDto.Entities)
-            {
-                <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(venue.Id)">
-                    <div class="card m-2">
-                        <div class="card-head"> 
-                            <img src="@venue.LogoUrlPath" alt="logo" class="card-logo">
-                            <div class="product-detail">
-                                <h2>@venue.Name</h2> @venue.Description
+        @if (isLoading)
+        {
+            <div class="content-wrapper center fade-in">
+                <svg class="pl" viewBox="0 0 128 128" width="128px" height="128px" role="img"
+                    aria-label="A pan being used to flip a blob resembling bacon as it splashes drops of grease in and out">
+                    <clipPath id="pan-clip">
+                        <rect rx="12" ry="14" x="4" y="52" width="68" height="28" />
+                    </clipPath>
+                    <defs>
+                        <linearGradient id="pl-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#000" />
+                            <stop offset="100%" stop-color="#fff" />
+                        </linearGradient>
+                        <mask id="pl-mask">
+                            <rect x="0" y="0" width="88" height="80" fill="url(#pl-grad)" />
+                        </mask>
+                    </defs>
+                    <g fill="currentColor">
+                        <g fill="none" stroke-dasharray="20 221" stroke-dashoffset="20" stroke-linecap="round" stroke-width="4">
+                            <g stroke="hsl(38,90%,50%)">
+                                <circle class="pl__ring" cx="44" cy="40" r="35" transform="rotate(90,44,40)" />
+                            </g>
+                            <g stroke="hsl(8,90%,40%)" mask="url(#pl-mask)">
+                                <circle class="pl__ring" cx="44" cy="40" r="35" transform="rotate(90,44,40)" />
+                            </g>
+                        </g>
+                        <g fill="hsla(223,10%,70%,0)">
+                            <g class="pl__drop pl__drop--1">
+                                <circle class="pl__drop-inner" cx="13" cy="60" r="2" />
+                            </g>
+                            <g class="pl__drop pl__drop--2">
+                                <circle class="pl__drop-inner" cx="13" cy="60" r="2" />
+                            </g>
+                            <g class="pl__drop pl__drop--3">
+                                <circle class="pl__drop-inner" cx="67" cy="72" r="2" />
+                            </g>
+                            <g class="pl__drop pl__drop--4">
+                                <circle class="pl__drop-inner" cx="67" cy="72" r="2" />
+                            </g>
+                            <g class="pl__drop pl__drop--5">
+                                <circle class="pl__drop-inner" cx="67" cy="72" r="2" />
+                            </g>
+                        </g>
+                        <g class="pl__pan">
+                            <rect rx="2" ry="2" x="4" y="66" width="68" height="14" clip-path="url(#pan-clip)" id="pan" />
+                            <rect rx="2" ry="2" x="76" y="66" width="48" height="7" />
+                        </g>
+                        <rect class="pl__shadow" fill="hsla(223,10%,50%,0.2)" rx="3.5" ry="3.5" x="10" y="121" width="60"
+                            height="7" />
+                    </g>
+                </svg>
+            </div>
+        }
+        else
+        {
+            <div class="card-container mt-3 mt-md-5">
+                @foreach (var venue in venueDto.Entities)
+                {
+                    <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(venue.Id)">
+                        <div class="card m-2">
+                            <div class="card-head">
+                                <img src="@venue.LogoUrlPath" alt="logo" class="card-logo">
+                                <div class="product-detail">
+                                    <h2>@venue.Name</h2> @venue.Description
+                                </div>
                             </div>
-                            @* <span class="back-text"> FAS </span> *@
-                        </div>
-                        <div class="card-body">
-                            <div class="product-desc">
-                                <span class="product-title">
-                                    @venue.Name
-                                </span>
-                                <span class="product-caption">
-                                    @venue.Description
-                                </span>
-                                <span class="product-rating">
-                                    @for (var i = 0; i < venue.Rating; i++)
-                                    {
-                                        <i class="fa fa-star"></i>
-                                    }
-                                    @if (venue.Rating < 5)
-                                    {
-                                        for (var j = venue.Rating; j < 5; j++)
-                                        {
-                                            <i class="fa fa-star grey"></i>
-                                        }
-                                    }
-                                    <span class="badge">
-                                        @venue.Rating
+                            <div class="card-body">
+                                <div class="product-desc">
+                                    <span class="product-title">
+                                        @venue.Name
                                     </span>
-                                </span>
-                            </div> 
+                                    <span class="product-caption">
+                                        @venue.Description
+                                    </span>
+                                    <span class="product-rating">
+                                        @for (var i = 0; i < venue.Rating; i++)
+                                        {
+                                            <i class="fa fa-star"></i>
+                                        }
+                                        @if (venue.Rating < 5)
+                                        {
+                                            for (var j = venue.Rating; j < 5; j++)
+                                            {
+                                                <i class="fa fa-star grey"></i>
+                                            }
+                                        }
+                                        <span class="badge">
+                                            @venue.Rating
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
+                    </a>
+                }
+            </div>
+
+            <div class="row">
+                <div class="pagecontainer">
+                    <button class="prevBtn" @onclick="GoToPreviousPage" disabled="@(!isLoading && currentPage == 1)">
+                        <span class="prevBtn-icon"><i class="fa-solid fa-angle-left m-1"
+                                style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
+                        <span class="prevBtn-text" style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'>Prev</span>
+                    </button>
+                    <div class="containerBtns">
+                        @foreach (var i in GetPageNumbers())
+                        {
+                            <button class="@(i == currentPage ? "activeBtn" : "")" @onclick="() => GoToPage(i)">@i</button>
+                        }
                     </div>
-                </a>
-            }
-        </div>
-         
-         <div class="row">
-            <div class="pagecontainer">
-                <button class="prevBtn" @onclick="GoToPreviousPage" disabled="@(!isLoading && currentPage == 1)"  style='@(currentPage == 1 ? "display: none;" : "")' >
-                    <span class="prevBtn-icon"><i class="fa-solid fa-angle-left m-1"></i></span>
-                    <span class="prevBtn-text">Prev</span>
-                </button>
-                <div class="containerBtns">
-                    @foreach (var i in GetPageNumbers())
-                    {
-                        <button class="@(i == currentPage ? "activeBtn" : "")" @onclick="() => GoToPage(i)">@i</button>
-                    }
+                    <button class="nextBtn " @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
+                        <span class="nextBtn-text" style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'>Next</span>
+                        <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"
+                                style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
+                    </button>
                 </div>
-                <button class="nextBtn" @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
-                    <span class="nextBtn-text">Next</span>
-                    <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"></i></span>
-                </button>
+                <div class="paginate-details">
+                    <span>-</span>
+                    <span class="count">@venueDto.AmountOfEntities</span>
+                    <span>-</span>
+                </div>
             </div>
-            <div class="paginate-details">
-                <span>-</span>
-                <span class="count">@venueDto.AmountOfEntities</span>
-                 <span>-</span>
-            </div>
-        </div>
+        }
     }
-    @* @if (SelectedVenue != null && IsAdmin)
-    {
-        <div class="update-form">
-            <h3>Update Venue</h3>
-            <div>
-                <label for="newName">Name:</label>
-                <input type="text" @bind="SelectedVenue.Name">
-            </div>
-            <div>
-                <label for="newEmail">Email:</label>
-                <input type="text" @bind="SelectedVenue.Email">
-            </div>
-            <div>
-                <label for="newAddress">Address:</label>
-                <input type="text" @bind="SelectedVenue.Address">
-            </div>
-            <div>
-                <label for="newContactNumber">Contact Number:</label>
-                <input type="text" @bind="SelectedVenue.ContactNumber">
-            </div>
-            <div>
-                <label for="newAveragePrice">Average Price:</label>
-                <input type="number" @bind="SelectedVenue.AveragePrice">
-            </div>
-            <div>
-                <label for="newDescription">Description:</label>
-                <input type="text" @bind="SelectedVenue.Description">
-            </div>
-            <br>
-            <div class="venue-actions">
-                <button @onclick="() => UpdateVenue()">Save</button>
-                <button @onclick="() => HideUpdateForm()">Cancel</button>
-            </div>
-        </div>
-    } *@
 </div>
 
 <style>
@@ -292,10 +342,9 @@
     }
 </style>
 
-<style> 
-
+<style>
     .card-container {
-        margin: 30px auto ;
+        margin: 30px auto;
         margin-bottom: 250px;
         display: flex;
         flex-wrap: wrap;
@@ -432,19 +481,25 @@
         opacity: 50%;
     }
 
-    .btn
-    {
+    .btn {
         background: #f7fa2e;
         background: -moz-linear-gradient(-45deg, #fae62e 8%, #c82929 83%);
         background: -webkit-linear-gradient(-45deg, #fae62e 8%, #c82929 83%);
         background: linear-gradient(135deg, #fae62e 8%, #c82929 83%);
-        border: none !important; 
+        border: none !important;
         font-weight: 500 !important;
         color: #ffffff !important;
     }
 </style>
 
 <style>
+    .container {
+        width: 90%;
+        max-width: 1700px;
+        margin: 40px auto;
+        margin-bottom: 40px;
+    }
+
     .pagecontainer {
         padding: 8px 64px;
         display: flex;
@@ -476,7 +531,6 @@
         align-items: center;
         font-size: 16px;
         font-weight: 500;
-        color: #2a3b52
     }
 
     .count {
@@ -496,10 +550,6 @@
         margin-left: 6px;
     }
 
-    .prevBtn svg,
-    .nextBtn svg {
-        color: #2a3b52
-    }
 
     button[disabled].prevBtn,
     button[disabled].nextBtn {
@@ -525,7 +575,7 @@
         justify-content: start;
     }
 
-    .activeBtn { 
+    .activeBtn {
         padding: 4px 6px;
         min-width: 40px;
         height: 40px;
@@ -550,5 +600,447 @@
     .numberBtn[disabled] {
         cursor: not-allowed
     }
+</style>
 
+<style>
+    .hidden {
+        display: none;
+    }
+
+    .fade-out {
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+    }
+
+    .fade-in {
+        opacity: 1;
+        transition: opacity 0.5s ease-in;
+    }
+
+    :root {
+        --hue: 223;
+        --bg: #e8e3e3;
+        --fg: #1c1717;
+        --trans-dur: 0.3s;
+    }
+
+    .center {
+        width: 1500px;
+        height: 800px;
+        display: flex;
+        justify-content: center;
+        justify-items: center;
+        align-items: center;
+        align-content: center;
+    }
+
+    .pl {
+        margin: auto;
+        width: 12em;
+        height: 12em;
+    }
+
+    .pl__drop,
+    .pl__drop-inner,
+    .pl__pan,
+    .pl__ring,
+    .pl__shadow {
+        animation: pan 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+
+    .pl__drop {
+        transform-origin: 13px 60px;
+    }
+
+    .pl__drop-inner {
+        animation-timing-function: cubic-bezier(0.33, 0.84, 0.67, 0.84);
+    }
+
+    .pl__drop--1 {
+        animation-name: drop-1;
+    }
+
+    .pl__drop--1 .pl__drop-inner {
+        animation-name: drop- 1-inner;
+    }
+
+    .pl__drop--2 {
+        animation-name: drop-2;
+    }
+
+    .pl__drop--2 .pl__drop-inner {
+        animation-name: drop- 2-inner;
+    }
+
+    .pl__drop--3 {
+        animation-name: drop-3;
+        transform-origin: 67px 72px;
+    }
+
+    .pl__drop--3 .pl__drop-inner {
+        animation-name: drop- 3-inner;
+    }
+
+    .pl__drop--4 {
+        animation-name: drop-4;
+        transform-origin: 67px 72px;
+    }
+
+    .pl__drop--4 .pl__drop-inner {
+        animation-name: drop- 4-inner;
+    }
+
+    .pl__drop--5 {
+        animation-name: drop-5;
+        transform-origin: 67px 72px;
+    }
+
+    .pl__drop--5 .pl__drop-inner {
+        animation-name: drop- 5-inner;
+    }
+
+    .pl__pan {
+        transform-origin: 36px 74px;
+    }
+
+    .pl__ring {
+        animation-name: flip-ring;
+    }
+
+    .pl__shadow {
+        animation-name: pan-shadow;
+        transform-origin: 36px 124.5px;
+    }
+
+    @@media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #1c1717;
+            --fg: #e8e3e3;
+        }
+    }
+
+    @@keyframes drop-1 {
+        from {
+            animation-timing-function: steps(1, end);
+            transform: translate(0, 0);
+            visibility: hidden;
+        }
+
+        30% {
+            animation-timing-function: linear;
+            transform: translate(0, 0);
+            visibility: visible;
+        }
+
+        50%,
+        to {
+            transform: translate(-6px, 0);
+        }
+    }
+
+    @@keyframes drop-1-inner {
+
+        from,
+        30% {
+            fill: #abafba;
+            transform: translate(0, 0);
+        }
+
+        50%,
+        to {
+            fill: #abafba;
+            transform: translate(0, -27px);
+        }
+    }
+
+    @@keyframes drop-2 {
+        from {
+            animation-timing-function: steps(1, end);
+            transform: translate(0, 0);
+            visibility: hidden;
+        }
+
+        30% {
+            animation-timing-function: linear;
+            transform: translate(0, 0);
+            visibility: visible;
+        }
+
+        50%,
+        to {
+            transform: translate(-8px, 0);
+        }
+    }
+
+    @@keyframes drop-2-inner {
+
+        from,
+        30% {
+            fill: #abafba;
+            transform: translate(0, 0);
+        }
+
+        50%,
+        to {
+            fill: #abafba;
+            transform: translate(0, -9px);
+        }
+    }
+
+    @@keyframes drop-3 {
+        from {
+            animation-timing-function: steps(1, end);
+            transform: translate(0, 0);
+            visibility: hidden;
+        }
+
+        78% {
+            animation-timing-function: linear;
+            transform: translate(0, 0);
+            visibility: visible;
+        }
+
+        98%,
+        to {
+            transform: translate(-24px, 0);
+        }
+    }
+
+    @@keyframes drop-3-inner {
+
+        from,
+        78% {
+            fill: #abafba;
+            transform: translate(0, 0);
+        }
+
+        98%,
+        to {
+            fill: #abafba;
+            transform: translate(0, -28px);
+        }
+    }
+
+    @@keyframes drop-4 {
+        from {
+            animation-timing-function: steps(1, end);
+            transform: translate(0, 0);
+            visibility: hidden;
+        }
+
+        78% {
+            animation-timing-function: linear;
+            transform: translate(0, 0);
+            visibility: visible;
+        }
+
+        98%,
+        to {
+            transform: translate(-8px, 0);
+        }
+    }
+
+    @@keyframes drop-4-inner {
+
+        from,
+        78% {
+            fill: #abafba;
+            transform: translate(0, 0);
+        }
+
+        98%,
+        to {
+            fill: #abafba;
+            transform: translate(0, -36px);
+        }
+    }
+
+    @@keyframes drop-5 {
+        from {
+            animation-timing-function: steps(1, end);
+            transform: translate(0, 0);
+            visibility: hidden;
+        }
+
+        78% {
+            animation-timing-function: linear;
+            transform: translate(0, 0);
+            visibility: visible;
+        }
+
+        98%,
+        to {
+            transform: translate(8px, 0);
+        }
+    }
+
+    @@keyframes drop-5-inner {
+
+        from,
+        78% {
+            fill: #abafba;
+            transform: translate(0, 0);
+        }
+
+        98%,
+        to {
+            fill: #abafba;
+            transform: translate(0, -32px);
+        }
+    }
+
+    @@keyframes flip-ring {
+
+        from,
+        27% {
+            animation-timing-function: cubic-bezier(0.33, 0.84, 0.67, 0.84);
+            stroke-dashoffset: 20;
+            stroke-width: 4px;
+        }
+
+        53.5% {
+            animation-timing-function: cubic-bezier(0.33, 0.16, 0.67, 0.16);
+            stroke-dashoffset: -100;
+            stroke-width: 10px;
+        }
+
+        80%,
+        to {
+            stroke-dashoffset: -220;
+            stroke-width: 4px;
+        }
+    }
+
+    @@keyframes pan {
+
+        from,
+        88%,
+        to {
+            transform: translate(0, 0) rotate(0);
+        }
+
+        20% {
+            animation-timing-function: cubic-bezier(0.33, 0.16, 0.67, 0.16);
+            transform: translate(-5px, 0) rotate(-30deg);
+        }
+
+        30% {
+            animation-timing-function: cubic-bezier(0.33, 0.84, 0.67, 0.84);
+            transform: translate(0, 0) rotate(20deg);
+        }
+
+        60%,
+        78% {
+            animation-timing-function: linear;
+            transform: translate(0, 0) rotate(0);
+        }
+
+        81.33% {
+            animation-timing-function: linear;
+            transform: translate(0, 4px) rotate(0);
+        }
+
+        84.67% {
+            animation-timing-function: linear;
+            transform: translate(0, -2px) rotate(0);
+        }
+    }
+
+    @@keyframes pan-shadow {
+
+        from,
+        88%,
+        to {
+            fill: rgba(115, 122, 140, 0.2);
+            transform: scaleX(1);
+        }
+
+        20% {
+            animation-timing-function: cubic-bezier(0.33, 0.16, 0.67, 0.16);
+            fill: rgba(115, 122, 140, 0.2);
+            transform: scaleX(0.77);
+        }
+
+        30% {
+            animation-timing-function: cubic-bezier(0.33, 0.84, 0.67, 0.84);
+            fill: rgba(115, 122, 140, 0.2);
+            transform: scaleX(1);
+        }
+
+        60%,
+        78% {
+            animation-timing-function: linear;
+            fill: rgba(115, 122, 140, 0.2);
+            transform: scaleX(1);
+        }
+
+        81.33% {
+            animation-timing-function: linear;
+            fill: rgba(115, 122, 140, 0.25);
+            transform: scaleX(0.87);
+        }
+
+        84.67% {
+            animation-timing-function: linear;
+            fill: rgba(115, 122, 140, 0.225);
+            transform: scaleX(1.065);
+        }
+    }
+
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        -ms-appearance: none;
+        appearance: none;
+        outline: 0;
+        box-shadow: none;
+        border: 0 !important;
+        background: -moz-linear-gradient(-45deg, #fae62e 8%, #c82929 83%);
+        background: -webkit-linear-gradient(-45deg, #fae62e 8%, #c82929 83%);
+        background: linear-gradient(135deg, #92850f 8%, #c82929 83%);
+        background-image: none;
+        flex: 1;
+        padding: 0 .5em;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1em;
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    select::-ms-expand {
+        display: none;
+    }
+
+    .select {
+        position: relative;
+        display: flex;
+        width: 15em;
+        height: 2em;
+        line-height: 2;
+        background: -moz-linear-gradient(-45deg, #e24949 8%, #c82929 83%);
+        background: -webkit-linear-gradient(-45deg, #e24949 8%, #c82929 83%);
+        background: linear-gradient(135deg, #e24949 8%, #c82929 83%);
+        overflow: hidden;
+        border-radius: .25em;
+    }
+
+    .select::after {
+        content: '\25BC';
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0 1em;
+        background: -moz-linear-gradient(-45deg, #e24949 8%, #c82929 83%);
+        background: -webkit-linear-gradient(-45deg, #e24949 8%, #c82929 83%);
+        background: linear-gradient(135deg, #e24949 8%, #c82929 83%);
+        cursor: pointer;
+        pointer-events: none;
+        transition: .25s all ease;
+    }
+
+    .select:hover::after {
+        background: -moz-linear-gradient(-45deg, #e24949 8%, #c82929 83%);
+        background: -webkit-linear-gradient(-45deg, #e24949 8%, #c82929 83%);
+        background: linear-gradient(135deg, #e24949 8%, #c82929 83%);
+    }
 </style>

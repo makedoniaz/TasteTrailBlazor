@@ -52,6 +52,6 @@ public class UserService : IUserService
     public async Task<UserDto?> GetUserRolesAsync(string userId)
     {
         var client = await CreateAuthenticatedClientAsync();
-        return await client.GetFromJsonAsync<UserDto>($"/api/User/GetUserRoles/{userId}");
+        return await client.GetFromJsonAsync<UserDto>($"/api/User/GetUserRoles");
     }
 }

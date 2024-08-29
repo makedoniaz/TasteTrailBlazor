@@ -21,15 +21,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
-
-        if (!IsAuthorized)
+        try
         {
-            NavigationManager.NavigateTo("/");
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+
+            if (!IsAuthorized)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+            activeIndex = 0;
         }
-        activeIndex = 0;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
+        }
     }
 
     private void GoToAccount()
@@ -39,14 +46,21 @@
 
     private async Task LogoutAsync()
     {
-        await localStorageService.RemoveItemAsync("jwt");
-        await localStorageService.RemoveItemAsync("refresh");
+        try
+        {
+            await localStorageService.RemoveItemAsync("jwt");
+            await localStorageService.RemoveItemAsync("refresh");
 
-        var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
-        authProvider.NotifyUserLogout();
+            var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
+            authProvider.NotifyUserLogout();
 
-        // Redirect to the login page
-        NavigationManager.NavigateTo("/Login", true);
+            // Redirect to the login page
+            NavigationManager.NavigateTo("/Login", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
+        }
     }
 
 }
@@ -121,6 +135,12 @@
                         <span class="menu-title">Venue List</span>
                     </NavLink>
                 </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/VenueCreate">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Venue Create</span>
+                    </NavLink>
+                </li>
                 @* <li class="nav-item">
                 <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/">
                 <i class="icon-paper menu-icon"></i>
@@ -149,45 +169,5 @@
 
     .sidebar {
         width: 240px;
-    }
-
-    @@media screen and (orientation: portrait) {
-        .nav-link {
-            font-size: 14px;
-            padding: 8px 16px;
-        }
-
-        .sidebar {
-            width: 20px !important;
-        }
-
-        .menu-title {
-            display: none;
-        }
-
-        .icon-grid,
-        .icon-head {
-            font-size: 20px;
-        }
-    }
-
-    @@media screen and (orientation: landscape) {
-        .nav-link {
-            font-size: 18px;
-            padding: 12px 24px;
-        }
-
-        .sidebar {
-            width: 240px;
-        }
-
-        .menu-title {
-            display: inline;
-        }
-
-        .icon-grid,
-        .icon-head {
-            font-size: 24px;
-        }
     }
 </style>

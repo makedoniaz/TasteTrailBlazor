@@ -20,8 +20,7 @@ public class Venue
     public string? Email { get; set; }
 
 
-    public string LogoUrlPath { get; set; } =
-        "https://tastetrailstorage.blob.core.windows.net/venue-logos/default-logo.png";
+    public string? LogoUrlPath { get; set; } 
     public float AveragePrice { get; set; }
 
     public float Rating { get; set; }

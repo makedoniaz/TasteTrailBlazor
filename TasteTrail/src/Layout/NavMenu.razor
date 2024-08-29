@@ -10,40 +10,61 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+        try
         {
-            var authState = await jwtProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
+            if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+            {
+                var authState = await jwtProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
 
-            IsAuthenticated = user.Identity.IsAuthenticated;
+                IsAuthenticated = user.Identity.IsAuthenticated;
 
-            if (IsAuthenticated)
-            { 
-                Name = user.Identity.Name;
-                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                await CheckAdminRoleAsync(userId);
+                if (IsAuthenticated)
+                {
+                    Name = user.Identity.Name;
+                    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    await CheckAdminRoleAsync(userId);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
         }
     }
 
     private async Task CheckAdminRoleAsync(string userId)
     {
-        if (userId != null)
+        try
         {
-            var user = await IUserService.GetUserRolesAsync(userId);
-
-            if (user != null && user.Roles != null && user.Roles.Contains("Admin"))
+            if (userId != null)
             {
-                IsAdmin = true;
+                var user = await IUserService.GetUserRolesAsync(userId);
+
+                if (user != null && user.Roles != null && user.Roles.Contains("Admin"))
+                {
+                    IsAdmin = true;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
         }
     }
 
     private async Task LogoutAsync()
     {
-        if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+        try
         {
-            await jwtProvider.LogoutAsync(); 
+            if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+            {
+                await jwtProvider.LogoutAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
         }
     }
 }

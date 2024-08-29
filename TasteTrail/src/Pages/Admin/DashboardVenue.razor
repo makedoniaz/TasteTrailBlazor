@@ -9,12 +9,12 @@
 @inject IVenueService IVenueService
 
 @code {
-    private VenueDto venueDto = new VenueDto();
-    private int from = 0;
-    private int to = 10;
     private int currentPage = 1;
-    private int totalPages = 10;
-    private int itemsPerPage = 2;
+    private int totalPages = 0;
+    private int itemsPerPage = 5;
+    private VenueDto? venueDto { get; set; }
+    private string searchQuery = string.Empty;
+    private FilterType selectedFilter = FilterType.OldestFirst;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -38,21 +38,21 @@
                 return;
             }
 
+            isLoading = true;
             try
             {
-                from = (currentPage - 1) * itemsPerPage;
-                to = from + itemsPerPage;
-
-                venueDto = await IVenueService.GetFilteredVenuesAsync(FilterType.MostLiked);
-                StateHasChanged();
+                venueDto = await IVenueService.GetFilteredVenuesAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
+                if (venueDto != null)
+                {
+                    totalPages = venueDto.AmountOfPages;
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading venue data: {ex.Message}");
+                Console.WriteLine($"Error loading venues: {ex.Message}");
             }
             finally
             {
-                await Task.Delay(3100);
                 isLoading = false;
             }
         }
@@ -63,25 +63,36 @@
         await LoadVenues();
     }
 
-    private void GoToPage(int pageNumber)
+    private void FilterVenues()
+    {
+        currentPage = 1;
+        Refresh();
+    }
+
+    private void GoToDetails(int id)
+    {
+        NavigationManager.NavigateTo($"/Venue/{id}");
+    }
+
+    private async Task GoToPage(int pageNumber)
     {
         if (pageNumber < 1 || pageNumber > totalPages)
             return;
 
         currentPage = pageNumber;
-        LoadVenues().GetAwaiter().GetResult();
+        await LoadVenues();
     }
 
-    private void GoToPreviousPage()
+    private async Task GoToPreviousPage()
     {
         if (currentPage > 1)
-            GoToPage(currentPage - 1);
+            await GoToPage(currentPage - 1);
     }
 
-    private void GoToNextPage()
+    private async Task GoToNextPage()
     {
         if (currentPage < totalPages)
-            GoToPage(currentPage + 1);
+            await GoToPage(currentPage + 1);
     }
 
     private IEnumerable<int> GetPageNumbers()
@@ -92,6 +103,17 @@
         for (int i = startPage; i <= endPage; i++)
         {
             yield return i;
+        }
+    }
+
+    private void HandleChange(ChangeEventArgs e)
+    {
+        if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
+        {
+            selectedFilter = filter;
+            Console.WriteLine($"Error loading venues: {(int)filter}");
+
+            FilterVenues();
         }
     }
 }
@@ -154,9 +176,11 @@ else
     <div class="content-wrapper">
         <div class="row mb-3">
             <div class="searchcontainer">
-                <select id="searchType" name="searchType">
-                    <option value="1">Search Filter1</option>
-                    <option value="1">Search Filter2</option>
+                <select @onchange="HandleChange">
+                    @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
+                    {
+                        <option value="@filter">@filter</option>
+                    }
                 </select>
                 <input type="text" id="searchInput" placeholder="Search...">
                 <button><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -190,7 +214,7 @@ else
                                     {
                                         <tr>
                                             <td></td>
-                                            <td> 
+                                            <td>
                                                 <img src="@venue!.LogoUrlPath" alt="Venue Avatar" class="rounded-circle"
                                                     width="50" height="50" />
                                             </td>
@@ -199,8 +223,8 @@ else
                                             <td>@venue!.Description</td>
                                             <td>@venue!.ContactNumber</td>
                                             <td>@venue!.Email</td>
-                                            <td>@venue!.AveragePrice</td> 
-                                            <td>@venue!.Rating</td> 
+                                            <td>@venue!.AveragePrice</td>
+                                            <td>@venue!.Rating</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -213,27 +237,26 @@ else
         <div class="row">
             <div class="container">
                 <button class="prevBtn" @onclick="GoToPreviousPage" disabled="@(!isLoading && currentPage == 1)">
-                    <span class="prevBtn-icon">
-                        <!-- SVG for previous button -->
-                    </span>
-                    <span class="prevBtn-text">Prev</span>
+                    <span class="prevBtn-icon"><i class="fa-solid fa-angle-left m-1"
+                            style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
+                    <span class="prevBtn-text" style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'>Prev</span>
                 </button>
                 <div class="containerBtns">
-                    @for (int i = 1; i <= totalPages; i++)
+                    @foreach (var i in GetPageNumbers())
                     {
                         <button class="@(i == currentPage ? "activeBtn" : "")" @onclick="() => GoToPage(i)">@i</button>
                     }
                 </div>
-                <button class="nextBtn" @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
-                    <span class="nextBtn-text">Next</span>
-                    <span class="nextBtn-icon">
-                        <!-- SVG for next button -->
-                    </span>
+                <button class="nextBtn " @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
+                    <span class="nextBtn-text" style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'>Next</span>
+                    <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"
+                            style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
                 </button>
             </div>
             <div class="paginate-details">
                 <span>-</span>
-                @* <span class="count">@venuesDto.Count</span> <span>-</span> *@
+                <span class="count">@venueDto.AmountOfEntities</span>
+                <span>-</span>
             </div>
         </div>
     </div>
@@ -679,11 +702,7 @@ else
     .nextBtn svg {
         margin-left: 6px;
     }
-
-    .prevBtn svg,
-    .nextBtn svg {
-        color: #2a3b52
-    }
+ 
 
     button[disabled].prevBtn,
     button[disabled].nextBtn {
@@ -771,85 +790,5 @@ else
         margin-right: 0;
         color: rgb(139, 139, 139);
         background: white;
-    }
-</style>
-
-<style>
-    @@media (max-width: 1200px) {
-        .content-wrapper {
-            padding: 15px;
-        }
-
-        .table-responsive {
-            font-size: 0.9rem;
-        }
-    }
-
-    @@media (max-width: 992px) {
-        .content-wrapper {
-            padding: 10px;
-        }
-
-        .table-responsive {
-            font-size: 0.85rem;
-        }
-
-        .paginate-details {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .containerBtns button {
-            padding: 8px 12px;
-            font-size: 0.85rem;
-        }
-
-        .prevBtn,
-        .nextBtn {
-            padding: 8px 12px;
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .table-responsive {
-            font-size: 0.8rem;
-        }
-
-        .searchcontainer {
-            flex-direction: column;
-        }
-
-        .searchcontainer select,
-        .searchcontainer input,
-        .searchcontainer button {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .content-wrapper {
-            padding: 5px;
-        }
-    }
-
-    @@media (max-width: 576px) {
-        .table-responsive {
-            font-size: 0.75rem;
-        }
-
-        .containerBtns {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .containerBtns button {
-            margin-bottom: 5px;
-        }
-
-        .prevBtn,
-        .nextBtn {
-            width: 100%;
-            margin-bottom: 10px;
-        }
     }
 </style>

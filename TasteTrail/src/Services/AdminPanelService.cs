@@ -86,11 +86,11 @@ public class AdminPanelService : IAdminPanelService
         return await client.GetFromJsonAsync<UserDto>($"/api/AdminPanel/User/{userId}");
     }
 
-    public async Task<List<UserDto>?> GetAllUsersAsync(int from, int to)
+    public async Task<List<UserDto>?> GetAllUsersAsync(int pageNumber, int pageSize)
     {
         var client = await CreateAuthenticatedClientAsync();
         var users = await client.GetFromJsonAsync<List<UserDto>>(
-            $"/api/AdminPanel/User??-from={from}&to={to}"
+            $"/api/AdminPanel/User?pageNumber={pageNumber}&pageSize={pageSize}"
         );
         return users?.ToList();
     }

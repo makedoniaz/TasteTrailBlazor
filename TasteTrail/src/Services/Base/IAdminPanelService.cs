@@ -11,5 +11,5 @@ public interface IAdminPanelService
     Task<bool> ToggleMuteAsync(string userId);
     Task<bool> ToggleBanAsync(string userId);
     Task<UserDto> GetUserByIdAsync(string userId);
-    Task<List<UserDto>> GetAllUsersAsync(int from, int to);
+    Task<List<UserDto>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 10);
 }
