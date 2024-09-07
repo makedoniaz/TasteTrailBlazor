@@ -8,9 +8,9 @@ namespace TasteTrailBlazor.Services.Base;
 public interface IVenueService
 {
     Task<VenueDto?> GetFilteredVenuesAsync(FilterType type, int pageNumber = 1, int pageSize = 10, string searchTerm = "");
-    Task<VenueDto> GetVenueByIdAsync(int id);
+    Task<Venue> GetVenueByIdAsync(int id);
     Task<int> GetVenueCountAsync();
-    Task<bool> CreateVenueAsync(Venue venueDto);
+    Task<bool> CreateVenueAsync(VenueCreateDto venue, StreamContent logoStream, string logoFileName);
     Task<bool> DeleteVenueByIdAsync(int id);
     Task<bool> UpdateVenueAsync(Venue venueDto);
     Task<bool> UploadVenueLogoAsync(int venueId, IBrowserFile logo);

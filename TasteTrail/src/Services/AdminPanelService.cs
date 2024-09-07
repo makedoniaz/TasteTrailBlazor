@@ -41,7 +41,7 @@ public class AdminPanelService : IAdminPanelService
     {
         var client = await CreateAuthenticatedClientAsync();
         var result = await client.GetFromJsonAsync<UsersCountResponse>(
-            "/api/AdminPanel/GetUsersCount"
+            "/api/AdminPanel/User/Count"
         );
         return result!.UsersCount;
     }
@@ -62,7 +62,7 @@ public class AdminPanelService : IAdminPanelService
         var response = await client.PostAsync(
             $"/api/AdminPanel/RemoveRole?userId={userId}&roleId={(int)role}",
             null
-        ); 
+        );
         return response.IsSuccessStatusCode;
     }
 
@@ -86,12 +86,33 @@ public class AdminPanelService : IAdminPanelService
         return await client.GetFromJsonAsync<UserDto>($"/api/AdminPanel/User/{userId}");
     }
 
-    public async Task<List<UserDto>?> GetAllUsersAsync(int pageNumber, int pageSize)
+    public async Task<UserListDto?> GetAllUsersAsync(
+        FilterType type,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string searchTerm = ""
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
-        var users = await client.GetFromJsonAsync<List<UserDto>>(
-            $"/api/AdminPanel/User?pageNumber={pageNumber}&pageSize={pageSize}"
-        );
-        return users?.ToList();
+        HttpResponseMessage response;
+
+        if (searchTerm == "")
+        {
+            response = await client.GetAsync(
+                $"/api/AdminPanel/User/Search?Type={(int)type}&PageNumber={pageNumber}&PageSize={pageSize}" 
+            );
+        }
+        else{
+            response = await client.GetAsync(
+                $"/api/AdminPanel/User/Search?Type={(int)type}&PageNumber={pageNumber}&PageSize={pageSize}&SearchTerm={searchTerm}" 
+            );
+        }
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadFromJsonAsync<UserListDto>();
+        }
+
+        return null;
     }
 }

@@ -1,0 +1,336 @@
+﻿@page "/Venue/Update/{Id:int?}"
+
+@attribute [Authorize(Policy = "AdminOnly")]
+@layout DashBoardLayout
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IVenueService IVenueService
+
+
+<PageTitle>Create Venue</PageTitle>
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+    private VenueCreateDto venue = new VenueCreateDto();
+    private StreamContent? _logoStream;
+    private string? _logoFileName;
+
+
+    private async Task OnFileSelected(ChangeEventArgs e)
+    {
+        var files = e.Value as IReadOnlyList<IBrowserFile>;
+        if (files != null && files.Count > 0)
+        {
+            var file = files[0];
+            _logoFileName = file.Name;
+            _logoStream = new StreamContent(file.OpenReadStream());
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+
+            if (!IsAuthorized)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
+        }
+    }
+    private async Task UpdateVenueAsync()
+    {
+        if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+        {
+            var authState = await jwtProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            var isAuthenticated = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+
+            if (!isAuthenticated)
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            try
+            {
+                @* if (selectedLogo != null)
+{
+bool uploadSuccess = await IVenueService.UploadVenueLogoAsync(venue.Id, selectedLogo);
+if (!uploadSuccess)
+{
+Console.WriteLine($"Error upload Logos: {uploadSuccess}");
+} *@
+
+                @* var result = await IVenueService.UpdateVenueAsync(venue, _logoStream, _logoFileName);
+if (result)
+{
+NavigationManager.NavigateTo("/DashboardVenues");
+} *@
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading venues: {ex.Message}");
+            }
+        }
+
+
+    }
+
+}
+<div class="content-wrapper">
+    <div class="row mb-3">
+        <div class="container ">
+
+            <EditForm Model="venue" OnValidSubmit="UpdateVenueAsync" class="createForm" enctype="multipart/form-data">
+                <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Update Venue</h1>
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="custom-file">
+                    <label class="input-file">
+                        <input type="file" class="input-file" name="file"
+                            @onchange="@(async e => await OnFileSelected(e))">
+                        <span class="input-file-btn">Выберите файл</span>
+                        <span class="input-file-text">Максимум 10мб</span>
+                    </label>
+                    @* <label class="custom-file-label" for="logo">Upload Logo</label>
+                    <input type="file" class="form-control custom-file-input file"
+                    @onchange="@(async e => await OnFileSelected(e))" /> *@
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="name">Name</label>
+                    <InputText id="name" class="form-control custom-file-input" placeholder="Input Venue Name..."
+                        @bind-Value="venue.Name" />
+                    <ValidationMessage For="@(() => venue.Name)" />
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="address">Address</label>
+                    <InputText id="address" class="form-control custom-file-input" placeholder="Input Venue Address..."
+                        @bind-Value="venue.Address" />
+                    <ValidationMessage For="@(() => venue.Address)" />
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="description">Description</label>
+                    <InputTextArea id="description" class="form-control custom-file-input"
+                        placeholder="Input Venue Description..." @bind-Value="venue.Description" />
+                    <ValidationMessage For="@(() => venue.Description)" />
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="contactNumber">Contact Number</label>
+                    <InputText id="contactNumber" class="form-control custom-file-input"
+                        placeholder="Input Venue ContactNumber..." @bind-Value="venue.ContactNumber" />
+                    <ValidationMessage For="@(() => venue.ContactNumber)" />
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="email">Email</label>
+                    <InputText id="email" class="form-control custom-file-input" placeholder="Input Venue Email..."
+                        @bind-Value="venue.Email" />
+                    <ValidationMessage For="@(() => venue.Email)" />
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="averagePrice">Average Price</label>
+                    <InputNumber id="averagePrice" class="form-control custom-file-input"
+                        placeholder="Input Average Price..." @bind-Value="venue.AveragePrice" />
+                    <ValidationMessage For="@(() => venue.AveragePrice)" />
+                </div>
+
+                <button type="submit" <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="none" d="M0 0h24v24H0z"></path>
+                        <path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"></path>
+                    </svg> Update
+                    </span>
+                </button>
+
+            </EditForm>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .createForm {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: 500;
+        margin: 15px auto;
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+        justify-content: center;
+        align-items: center;
+        justify-items: center;
+    }
+
+    .createForm .custom-file {
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .createForm .custom-file label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 18px;
+
+    }
+
+    .createForm .custom-file-input {
+        width: 100%;
+        font-size: 16px;
+
+        min-width: 580px;
+        max-width: 680px;
+        height: 45px;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1.5px solid lightgrey;
+        outline: none;
+        transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        box-shadow: 0px 0px 20px -18px;
+    }
+
+    .createForm .input-file {
+        position: relative;
+        display: inline-block;
+    }
+
+    .createForm .input-file span {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        outline: none;
+        text-decoration: none;
+        font-size: 16px;
+        vertical-align: middle;
+        color: rgb(255 255 255);
+        text-align: center;
+        border-radius: 8px;
+        background-color: #3ecc9f;
+        line-height: 22px;
+        height: 40px;
+        padding: 10px 20px;
+        box-sizing: border-box;
+        border: none;
+        margin: 0;
+        transition: background-color 0.2s;
+        width: 300px;
+    }
+
+    .createForm .input-file {
+        position: relative;
+        display: inline-block;
+    }
+
+    .createForm .input-file-btn {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        outline: none;
+        text-decoration: none;
+        font-size: 14px;
+        vertical-align: middle;
+        color: rgb(255 255 255);
+        text-align: center;
+        border-radius: 4px;
+        background-color: #419152;
+        line-height: 22px;
+        height: 40px;
+        padding: 10px 20px;
+        box-sizing: border-box;
+        border: none;
+        margin: 0;
+        transition: background-color 0.2s;
+    }
+
+    .createForm .input-file-text {
+        padding: 0 10px;
+        line-height: 40px;
+        display: inline-block;
+    }
+
+    .createForm .input-file input[type=file] {
+        position: absolute;
+        z-index: -1;
+        opacity: 0;
+        display: block;
+        width: 0;
+        height: 0;
+    }
+
+    .createForm .input-file input[type=file]:focus+.input-file-btn {
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
+    }
+
+    .createForm .input-file:hover .input-file-btn {
+        background-color: #59be6e;
+    }
+
+    .createForm .input-file:active .input-file-btn {
+        background-color: #2E703A;
+    }
+
+    .createForm .input-file input[type=file]:disabled+.input-file-btn {
+        background-color: #eee;
+    }
+
+    .createForm button {
+        min-width: 200px;
+        border: 2px solid #940534;
+        background-color: #940534;
+        border-radius: 1rem;
+        padding: 0.8em 1.2em;
+        transition: all ease-in-out 0.5s;
+        font-size: 14px;
+    }
+
+    .createForm button span {
+        font-size: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .createForm button:hover {
+        background-color: #68122c;
+    }
+</style>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.querySelector('.input-file');
+        const fileNameSpan = document.querySelector('.input-file-text');
+        console.log(fileInput);
+        console.log(fileNameSpan); 
+
+            fileInput.addEventListener('click', function () {
+
+                const file = this.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name;
+                }
+            }); 
+    });
+
+</script>

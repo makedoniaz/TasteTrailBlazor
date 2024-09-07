@@ -1,10 +1,11 @@
+using TasteTrailBlazor.Models;
+
 namespace TasteTrailBlazor.Dtos;
 
 public class MenuDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public decimal Price { get; set; }
-    public int VenueId { get; set; }
+    public int CurrentPage { get; set; }
+    public int AmountOfPages { get; set; }
+    public int AmountOfEntities { get; set; }
+    public List<Menu> Entities { get; set; } = new List<Menu>();
 }

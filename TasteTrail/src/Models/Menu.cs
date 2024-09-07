@@ -12,9 +12,9 @@ public class Menu
     public string? Name { get; set; }
 
     public string? Description { get; set; }
+    public string? imageUrlPath { get; set; }
 
     public int VenueId { get; set; }
 
-    public string? UserId { get; set; } 
-    public ICollection<MenuItem>? MenuItems { get; set; }
+    public string? UserId { get; set; }  
 }

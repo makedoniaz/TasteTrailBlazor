@@ -175,8 +175,8 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
             return false;
         }
 
-        // Console.WriteLine($"New JWT: {accessToken.Jwt}");
-        // Console.WriteLine($"New Refresh Token: {accessToken.Refresh}");
+        Console.WriteLine($"New JWT: {accessToken.Jwt}");
+        Console.WriteLine($"New Refresh Token: {accessToken.Refresh}");
 
         await this._localStorageService.SetItemAsStringAsync("jwt", accessToken.Jwt!);
         await this._localStorageService.SetItemAsStringAsync(

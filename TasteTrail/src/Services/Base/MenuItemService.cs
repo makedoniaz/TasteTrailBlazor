@@ -1,22 +1,26 @@
-using System.Net.Http.Json;
-using TasteTrailBlazor.Dtos;
-using TasteTrailBlazor.Services.Base;
-using Blazored.LocalStorage; 
 using System.Net.Http.Headers;
-using TasteTrailBlazor.Models; 
+using System.Net.Http.Json;
+using Blazored.LocalStorage;
+using TasteTrailBlazor.Dtos;
+using TasteTrailBlazor.Models;
+using TasteTrailBlazor.Services.Base;
+
 namespace TasteTrailBlazor.Services.Base;
 
 public class MenuItemService : IMenuItemService
 {
- private readonly ILocalStorageService _localStorageService;
+    private readonly ILocalStorageService _localStorageService;
     private readonly IHttpClientFactory _httpClientFactory;
-    public MenuItemService(ILocalStorageService localStorageService,
+
+    public MenuItemService(
+        ILocalStorageService localStorageService,
         IHttpClientFactory httpClientFactory
     )
     {
         _localStorageService = localStorageService;
         _httpClientFactory = httpClientFactory;
-    } 
+    }
+
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
         var token = await _localStorageService.GetItemAsStringAsync("jwt");
@@ -32,6 +36,7 @@ public class MenuItemService : IMenuItemService
 
         return client;
     }
+
     public async Task<MenuItem?> GetMenuItemByIdAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
@@ -42,22 +47,71 @@ public class MenuItemService : IMenuItemService
         }
         else
         {
-            Console.WriteLine($"Error loading menu item: {response.StatusCode} - {response.ReasonPhrase}");
+            Console.WriteLine(
+                $"Error loading menu item: {response.StatusCode} - {response.ReasonPhrase}"
+            );
             return null;
         }
     }
 
-    public async Task<List<MenuItem>?> GetMenuItemsFromToAsync(int from, int to, int menuId)
+    public async Task<MenuItemDto> GetFilteredMenuItemsAsync(
+        FilterType type,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string searchTerm = ""
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
-        var response = await client.GetAsync($"/api/MenuItem/GetFromTo?from={from}&to={to}&menuId={menuId}");
+        var filterRequest = new
+        {
+            type = (int)type,
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            searchTerm = searchTerm,
+        };
+        var response = await client.PostAsJsonAsync($"/api/MenuItem/GetFiltered", filterRequest);
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<List<MenuItem>>();
+            return await response.Content.ReadFromJsonAsync<MenuItemDto>();
         }
         else
         {
-            Console.WriteLine($"Error loading menu items: {response.StatusCode} - {response.ReasonPhrase}");
+            Console.WriteLine(
+                $"Error loading menu item: {response.StatusCode} - {response.ReasonPhrase}"
+            );
+            return null;
+        }
+    }
+
+    public async Task<MenuItemDto> GetFilteredMenuItemsAsync(
+        FilterType type, 
+        int menuId,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string searchTerm = ""
+    )
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        var filterRequest = new
+        {
+            type = (int)type,
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            searchTerm = searchTerm,
+        };
+        var response = await client.PostAsJsonAsync(
+            $"/api/Menu/MenuItem?menuId={menuId}",
+            filterRequest
+        );
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadFromJsonAsync<MenuItemDto>();
+        }
+        else
+        {
+            Console.WriteLine(
+                $"Error loading menu item: {response.StatusCode} - {response.ReasonPhrase}"
+            );
             return null;
         }
     }
@@ -68,7 +122,9 @@ public class MenuItemService : IMenuItemService
         var response = await client.PostAsJsonAsync("/api/MenuItem/Create", menuItemDto);
         if (!response.IsSuccessStatusCode)
         {
-            Console.WriteLine($"Error creating menu item: {response.StatusCode} - {response.ReasonPhrase}");
+            Console.WriteLine(
+                $"Error creating menu item: {response.StatusCode} - {response.ReasonPhrase}"
+            );
         }
     }
 
@@ -78,7 +134,9 @@ public class MenuItemService : IMenuItemService
         var response = await client.PutAsJsonAsync("/api/MenuItem/Update", menuItemDto);
         if (!response.IsSuccessStatusCode)
         {
-            Console.WriteLine($"Error updating menu item: {response.StatusCode} - {response.ReasonPhrase}");
+            Console.WriteLine(
+                $"Error updating menu item: {response.StatusCode} - {response.ReasonPhrase}"
+            );
         }
     }
 
@@ -88,7 +146,9 @@ public class MenuItemService : IMenuItemService
         var response = await client.DeleteAsync($"/api/MenuItem/DeleteById?id={id}");
         if (!response.IsSuccessStatusCode)
         {
-            Console.WriteLine($"Error deleting menu item: {response.StatusCode} - {response.ReasonPhrase}");
+            Console.WriteLine(
+                $"Error deleting menu item: {response.StatusCode} - {response.ReasonPhrase}"
+            );
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿@page "/DashboardUsers"
+﻿@page "/DashboardMenuItems"
 @attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
@@ -6,24 +6,24 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
-@inject IAdminPanelService IAdminPanelService
+@inject IMenuItemService IMenuItemService
 
-@code {
-
+@code { 
     private int currentPage = 1;
     private int totalPages = 0;
     private int itemsPerPage = 5;
-    private UserListDto? usersDto { get; set; }
+    private MenuItemDto? menuItemDto { get; set; }
     private string searchQuery = string.Empty;
-    private FilterType selectedFilter = FilterType.Muted;
     private bool isLoading = true;
+    private FilterType selectedFilter = FilterType.MostLiked;
+
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await LoadMenuItems();
     }
 
-    private async Task LoadUsers()
+    private async Task LoadMenuItems()
     {
         isLoading = true;
         if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
@@ -39,17 +39,18 @@
                 return;
             }
 
+            isLoading = true;
             try
             {
-                usersDto = await IAdminPanelService.GetAllUsersAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
-                if (usersDto != null)
+                menuItemDto = await IMenuItemService.GetFilteredMenuItemsAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
+                if (menuItemDto != null)
                 {
-                    totalPages = usersDto.AmountOfPages;
+                    totalPages = menuItemDto.AmountOfPages;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading user data: {ex.Message}");
+                Console.WriteLine($"Error loading menuItems: {ex.Message}");
             }
             finally
             {
@@ -59,133 +60,41 @@
         }
     }
 
-    private async Task Refresh()
-    {
-        await LoadUsers();
-    }
-
-    private void FilterUsers()
+     private void FilterMenuItems()
     {
         currentPage = 1;
         Refresh();
     }
-    private async Task ToggleMute(string userId)
+
+    private async Task Refresh()
     {
-        try
-        {
-            var success = await IAdminPanelService.ToggleMuteAsync(userId);
-            if (success)
-            {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.User.IsMuted = !updatedUser.User.IsMuted;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error toggling mute.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling mute: {ex.Message}");
-        }
+        await LoadMenuItems();
+    } 
+
+    private void GoToDetails(int id)
+    {
+        NavigationManager.NavigateTo($"/MenuItem/{id}");
     }
 
-    private async Task ToggleBan(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.ToggleBanAsync(userId);
-            if (success)
-            {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.User.IsBanned = !updatedUser.User.IsBanned;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error toggling ban.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling ban: {ex.Message}");
-        }
-    }
-
-    private async Task AssignRole(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.AssignRoleAsync(userId, UserRoles.Admin);
-            if (success)
-            {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.Roles.Add(UserRoles.Admin.ToString());
-                    updatedUser.Roles.Remove(UserRoles.User.ToString());
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error assigning role.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error assigning role: {ex.Message}");
-        }
-    }
-
-    private async Task RemoveRole(string userId)
-    {
-        try
-        {
-            var success = await IAdminPanelService.RemoveRoleAsync(userId, UserRoles.Admin);
-            if (success)
-            {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
-                if (updatedUser != null)
-                {
-                    updatedUser.Roles.Remove(UserRoles.Admin.ToString());
-                    updatedUser.Roles.Add(UserRoles.User.ToString());
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error removing role.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error removing role: {ex.Message}");
-        }
-    }
-
-    private void GoToPage(int pageNumber)
+    private async Task GoToPage(int pageNumber)
     {
         if (pageNumber < 1 || pageNumber > totalPages)
             return;
 
         currentPage = pageNumber;
-        LoadUsers().GetAwaiter().GetResult();
+        await LoadMenuItems();
     }
 
-    private void GoToPreviousPage()
+    private async Task GoToPreviousPage()
     {
         if (currentPage > 1)
-            GoToPage(currentPage - 1);
+            await GoToPage(currentPage - 1);
     }
 
-    private void GoToNextPage()
+    private async Task GoToNextPage()
     {
         if (currentPage < totalPages)
-            GoToPage(currentPage + 1);
+            await GoToPage(currentPage + 1);
     }
 
     private IEnumerable<int> GetPageNumbers()
@@ -198,18 +107,8 @@
             yield return i;
         }
     }
-
-    private void HandleChange(ChangeEventArgs e)
-    {
-        if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
-        {
-            selectedFilter = filter; 
-
-            FilterUsers();
-        }
-    }
-
-    private async Task HandleKeyPress(KeyboardEventArgs e)
+ 
+     private async Task HandleKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
@@ -217,20 +116,50 @@
         }
     }
 
+    private async Task CreateMenuItem()
+    { 
+        NavigationManager.NavigateTo("/MenuItem/Create", true); 
+    }
+    private async Task UpdateMenuItem(int id)
+    {   
+        NavigationManager.NavigateTo($"/MenuItem/Update/{id}", true); 
+    }
+    private async Task DeleteMenuItem(int id)
+    {
+    try
+    {
+        await IMenuItemService.DeleteMenuItemAsync(id);
+        await Refresh();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error deleting menuItem: {ex.Message}");
+    }
+    }
+
+     private void HandleChange(ChangeEventArgs e)
+    {
+        if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
+        {
+            selectedFilter = filter;
+            Console.WriteLine($"Error loading venues: {(int)filter}");
+
+            FilterMenuItems();
+        }
+    }
+
 }
-  <div class="content-wrapper">
+
+    <div class="content-wrapper">
         <div class="row mb-3">
-            <div class="searchcontainer">
+            <div class="searchcontainer"> 
                 <select @onchange="HandleChange">
                     @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
                     {
-                         if(filter == FilterType.Muted || filter == FilterType.NotMuted || filter == FilterType.Banned || filter == FilterType.NotBanned )
-                        {
                         <option value="@filter">@filter</option>
-                        }
                     }
                 </select>
-                <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for users..."
+                <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for menuItems..."
                     autocomplete="off" autofocus @onkeypress="HandleKeyPress">
                     <button @onclick="Refresh"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
@@ -290,7 +219,6 @@
 }
 else
 {
-    
         <div class="row">
             <div class="col-lg-12 grid-margin stretch-card">
                 <div class="card">
@@ -299,74 +227,37 @@ else
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>
-                                            <button style="ml-4" @onclick="() => Refresh()"><i
-                                                    class="fa-solid fa-arrows-rotate"></i></button>
+                                        <th>  
+                                            <button  @onclick="() => CreateMenuItem()">
+                                                <i class="fa-solid fa-plus"></i>
+                                            </button> 
+                                            <button  @onclick="() => Refresh()">
+                                                <i class="fa-solid fa-arrows-rotate"></i>
+                                            </button>
                                         </th>
-                                        <th>Profile</th>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Roles</th>
-                                        <th>Status</th>
-                                        <th>Role Actions</th>
-                                        <th>Actions</th>
+                                        <th>Logo</th>
+                                        <th>Name</th>
+                                        <th>Description</th> 
+                                        <th>VenueId</th>
+                                        <th>User Id</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if (usersDto != null) {
-                                    @foreach (var user in usersDto.Entities)
+                                    @foreach (var menuItem in menuItemDto.Entities)
                                     {
                                         <tr>
-                                            <td></td>
-                                            <td>
-                                                @if (string.IsNullOrEmpty(user!.User!.AvatarPath))
-                                                {
-                                                    <img src="../images/user.png" alt="User Avatar" class="rounded-circle"
-                                                        width="50" height="50" />
-                                                }
-                                                else
-                                                {
-                                                    <img src="@user!.User!.AvatarPath" alt="User Avatar" class="rounded-circle"
-                                                        width="50" height="50" />
-                                                }
+                                            <td><button style="ml-4" @onclick="() => UpdateMenuItem(menuItem.Id)" > <i class="fa-solid fa-pen-to-square"></i></button></td>
+                                            <td @onclick="() => GoToDetails(menuItem.Id)">
+                                                <img src="@menuItem!.ImageUrlPath" alt="MenuItem Avatar" class="rounded-circle"
+                                                    width="50" height="50" />
                                             </td>
-                                            <td>@user!.User!.UserName</td>
-                                            <td>@user!.User!.Email</td>
-                                            <td>@string.Join(", ", user!.Roles)</td>
-                                            <td>
-                                                <label
-                                                    class="badge @(user!.User!.IsBanned ? "badge-danger" : user!.User!.IsMuted ? "badge-warning" : "badge-success")">
-                                                    @(user!.User!.IsBanned ? "Banned" : user!.User!.IsMuted ? "Muted" :
-                                                        "Active")
-                                                </label>
-                                            </td>
-                                            <td>
-                                                @if (user!.Roles.Contains("Admin"))
-                                                {
-                                                    <button @onclick="() => RemoveRole(user!.User!.Id)"
-                                                        class="btn btn-github btn-sm">
-                                                        Remove Admin
-                                                    </button>
-                                                }
-                                                else
-                                                {
-                                                    <button @onclick="() => AssignRole(user!.User!.Id)" class="btn btn-info btn-sm">
-                                                        Assign Admin
-                                                    </button>
-                                                }
-                                            </td>
-                                            <td>
-                                                <button @onclick="() => ToggleMute(user!.User!.Id)"
-                                                    class="btn btn-warning btn-sm">
-                                                    @(user!.User!.IsMuted ? "Unmute" : "Mute")
-                                                </button>
-                                                <button @onclick="() => ToggleBan(user!.User!.Id)"
-                                                    class="btn btn-danger btn-sm">
-                                                    @(user!.User!.IsBanned ? "Unban" : "Ban")
-                                                </button>
-                                            </td>
+                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.Name</td>
+                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.Description</td>
+                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.Price</td> 
+                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.UserId</td>
+                                            <td><button @onclick="() => DeleteMenuItem(menuItem.Id)" class="btn btn-github btn-sm"> Delete</button></td>
                                         </tr>
-                                    }
                                     }
                                 </tbody>
                             </table>
@@ -378,36 +269,39 @@ else
         <div class="row">
             <div class="container">
                 <button class="prevBtn" @onclick="GoToPreviousPage" disabled="@(!isLoading && currentPage == 1)">
-                    <span class="prevBtn-icon">
-                        <!-- SVG for previous button -->
-                    </span>
-                    <span class="prevBtn-text">Prev</span>
+                    <span class="prevBtn-icon"><i class="fa-solid fa-angle-left m-1"
+                            style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
+                    <span class="prevBtn-text" style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'>Prev</span>
                 </button>
                 <div class="containerBtns">
-                    @for (int i = 1; i <= totalPages; i++)
+                    @foreach (var i in GetPageNumbers())
                     {
                         <button class="@(i == currentPage ? "activeBtn" : "")" @onclick="() => GoToPage(i)">@i</button>
                     }
                 </div>
-                <button class="nextBtn" @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
-                    <span class="nextBtn-text">Next</span>
-                    <span class="nextBtn-icon">
-                        <!-- SVG for next button -->
-                    </span>
+                <button class="nextBtn " @onclick="GoToNextPage" disabled="@((!isLoading && currentPage == totalPages) || totalPages == 0)">
+                    <span class="nextBtn-text" style='@((!isLoading && currentPage == totalPages) || totalPages == 0 ? "color: #C7C5C5" : "#2a3b52 ")'>Next</span>
+                    <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"
+                            style='@((!isLoading && currentPage == totalPages) || totalPages == 0 ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
                 </button>
             </div>
             <div class="paginate-details">
                 <span>-</span>
-                <span class="count">@usersDto.AmountOfEntities</span> <span>-</span>
+                <span class="count">@menuItemDto.AmountOfEntities</span>
+                <span>-</span>
             </div>
         </div>
 }
-</div>
+    </div>
 
-<style>
-     *{
-        font-weight: 600;
+<style> 
+    th button{
+        margin: 10px;
     }
+    th button:hover {
+        transition: opacity 0.5s ease-out;
+        opacity: 70%;
+    }  
     .hidden {
         display: none;
     }
@@ -793,6 +687,9 @@ else
     }
 </style>
 <style>
+    *{
+        font-weight: 600;
+    }
     tr>td:first-child {
         width: 1px;
     }
@@ -847,11 +744,7 @@ else
     .nextBtn svg {
         margin-left: 6px;
     }
-
-    .prevBtn svg,
-    .nextBtn svg {
-        color: #2a3b52
-    }
+ 
 
     button[disabled].prevBtn,
     button[disabled].nextBtn {

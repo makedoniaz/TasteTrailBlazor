@@ -11,7 +11,7 @@
 @code {
     private int currentPage = 1;
     private int totalPages = 0;
-    private int itemsPerPage = 3;
+    private int itemsPerPage = 5;
     private VenueDto? venueDto { get; set; }
     private string searchQuery = string.Empty;
     private FilterType selectedFilter = FilterType.OldestFirst;
@@ -36,7 +36,8 @@
             if (venueDto != null)
             {
                 totalPages = venueDto.AmountOfPages;
-            }  
+                Console.WriteLine(totalPages);
+            }
         }
         catch (Exception ex)
         {
@@ -45,6 +46,7 @@
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -92,13 +94,21 @@
     }
 
     private void HandleChange(ChangeEventArgs e)
-{
-    if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
     {
-        selectedFilter = filter;
-        FilterVenues();
+        if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
+        {
+            selectedFilter = filter;
+            FilterVenues();
+        }
     }
-}
+
+     private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Refresh();
+        }
+    } 
 }
 
 <div class="container h-100">
@@ -119,9 +129,9 @@
                 </select>
             </div>
             <div class="input-group mb-3">
-                <input type="text" @bind="searchQuery" @oninput="FilterVenues" class="form-control"
-                    placeholder="Search for venues..." autocomplete="off" autofocus>
-                <button class="btn accordion-collapse" @onclick="FilterVenues">
+                <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for venues..."
+                    autocomplete="off" autofocus @onkeypress="HandleKeyPress">
+                <button class="btn accordion-collapse" @onclick="Refresh">
                     Search
                 </button>
             </div>
@@ -247,7 +257,8 @@
                         }
                     </div>
                     <button class="nextBtn " @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
-                        <span class="nextBtn-text" style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'>Next</span>
+                        <span class="nextBtn-text"
+                            style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'>Next</span>
                         <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"
                                 style='@(currentPage == totalPages ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
                     </button>

@@ -71,14 +71,14 @@ public class VenueService : IVenueService
         return null;
     }
 
-    public async Task<VenueDto> GetVenueByIdAsync(int id)
+    public async Task<Venue> GetVenueByIdAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.GetAsync($"/api/Venue/GetById?id={id}");
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<VenueDto>();
+            return await response.Content.ReadFromJsonAsync<Venue>();
         }
 
         return null;
@@ -97,10 +97,40 @@ public class VenueService : IVenueService
         return 0;
     }
 
-    public async Task<bool> CreateVenueAsync(Venue venueDto)
+    public async Task<bool> CreateVenueAsync(
+        VenueCreateDto venue,
+        StreamContent logoStream,
+        string logoFileName
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
-        var response = await client.PostAsJsonAsync("/api/Venue/Create", venueDto);
+        using var formData = new MultipartFormDataContent();
+
+        formData.Add(new StringContent(venue.Name ?? string.Empty), nameof(venue.Name));
+        formData.Add(new StringContent(venue.Address ?? string.Empty), nameof(venue.Address));
+        formData.Add(
+            new StringContent(venue.Description ?? string.Empty),
+            nameof(venue.Description)
+        );
+        formData.Add(new StringContent(venue.Email ?? string.Empty), nameof(venue.Email));
+        formData.Add(
+            new StringContent(venue.ContactNumber ?? string.Empty),
+            nameof(venue.ContactNumber)
+        );
+        formData.Add(new StringContent(venue.AveragePrice.ToString()), nameof(venue.AveragePrice));
+
+        if (logoStream != null && !string.IsNullOrEmpty(logoFileName))
+        {
+            formData.Add(logoStream, "logo", logoFileName);
+        }
+
+        var response = await client.PostAsync("/api/Venue/Create", formData);
+
+         if (!response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Server responded with error: {responseContent}");
+        } 
 
         return response.IsSuccessStatusCode;
     }
@@ -126,7 +156,7 @@ public class VenueService : IVenueService
         var client = await CreateAuthenticatedClientAsync();
         using var content = new MultipartFormDataContent();
         var stream = logo.OpenReadStream(maxAllowedSize: 1024 * 1024 * 15);
-        content.Add(new StreamContent(stream), "file", logo.Name); 
+        content.Add(new StreamContent(stream), "file", logo.Name);
         var response = await client.PostAsync($"/api/VenueLogo/Create?venueId={venueId}", content);
 
         return response.IsSuccessStatusCode;

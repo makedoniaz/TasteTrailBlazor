@@ -39,7 +39,7 @@ public class VenuePhoto
 }
 
 public class VenueCreateDto
-{
+{ 
     public string? Name { get; set; }
 
     public string? Address { get; set; }

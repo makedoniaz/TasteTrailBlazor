@@ -1,7 +1,7 @@
 namespace TasteTrailBlazor.Models;
 
 public enum FilterType
-{
+{ 
     MostLiked,
 
     HighestRated,
@@ -13,4 +13,12 @@ public enum FilterType
     OldestFirst,
 
     LowestRated,
+
+    Muted,
+
+    NotMuted,
+
+    Banned,
+
+    NotBanned
 }

@@ -1,18 +1,22 @@
-﻿ @* @page "/Venue/{Id:int?}"
+﻿@page "/Venue/{Id:int?}"
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager UriHelper
 @inject HttpClient Http
 @inject ILocalStorageService localStorageService
 @inject IVenueService IVenueService
+@inject IMenuService IMenuService
 
 <PageTitle>Venue Details</PageTitle>
 
 @code {
+
+    int pageNumber = 1;
+    int pageSize = 10;
     public class VenueViewModel
     {
-        public VenueDto? Venue { get; set; }
-        public List<Menu>? Menus { get; set; } = new List<Menu>();
+        public Venue? Venue { get; set; }
+        public MenuDto? Menus { get; set; } = new MenuDto();
         //public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
         public double Latitude { get; set; } = 40.3820624;
         public double Longitude { get; set; } = 49.877007;
@@ -21,7 +25,7 @@
     [Parameter]
     public int Id { get; set; }
 
-    private VenueViewModel Model = new VenueViewModel(); 
+    private VenueViewModel Model = new VenueViewModel();
     private void GoToDetails(int Id)
     {
         UriHelper.NavigateTo($"/Menu/{Id}");
@@ -35,23 +39,16 @@
     private async Task LoadVenueData()
     {
         try
-        { 
+        {
             Model.Venue = await IVenueService.GetVenueByIdAsync(Id);
-            if (Model.Venue != null)
-            {
-                Console.WriteLine($"Venue loaded: {Model.Venue?.Name}");
-            }
- 
-            @* Model.Menus = await IVenueService.GetMenusByVenueIdAsync(Id);
-            if (Model.Menus != null)
-            {
-                Console.WriteLine($"Menus loaded: {Model.Menus.Count} items");
-            }  
+
+            Model.Menus = await IMenuService.GetFilteredMenusAsync(Id, pageNumber, pageSize);
+
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
-        } 
+        }
     }
 }
 
@@ -70,21 +67,21 @@
         <div class="col-md-8">
             <h1 class="mb-3">@Model?.Venue.Name</h1>
             <!-- Rating -->
-            <div class="rating" data-rating="@Model?.Venue.OverallRating">
+            <div class="rating" data-rating="@Model?.Venue.Rating">
                 <span class="text-warning">
-                    @for (var i = 0; i < (Model?.Venue.OverallRating); i++)
+                    @for (var i = 0; i < (Model?.Venue.Rating); i++)
                     {
                         <i class="fas fa-star star"></i>
                     }
-                    @if (Model?.Venue.OverallRating < 5)
+                    @if (Model?.Venue.Rating < 5)
                     {
-                        for (var j = (Model?.Venue.OverallRating); j < 5; j++)
+                        for (var j = (Model?.Venue.Rating); j < 5; j++)
                         {
                             <i class="far fa-star star"></i>
                         }
-                    }  
+                    }
                 </span>
-                <span class="badge bg-secondary ms-2">@Model.Venue.OverallRating</span>
+                <span class="badge bg-secondary ms-2">@Model.Venue.Rating</span>
             </div>
             <!-- Description -->
             <p class="mt-3"><strong>Description: </strong>@Model?.Venue.Description</p>
@@ -92,33 +89,35 @@
             <p class="mt-3"><strong>Address: </strong>@Model?.Venue.Address</p>
             <p class="mt-3"><strong>Contact Number: </strong>@Model?.Venue.ContactNumber</p>
             <p class="mt-3"><strong>Average Price: </strong>@Model?.Venue.AveragePrice</p>
- 
+
         </div>
     </div>
-    <hr class="mt-5">
-
+    @* <hr class="mt-5"> *@
     <div class="row mt-5">
-        @foreach (var menu in Model?.Menus)
+        @if (Model.Menus != null && Model.Menus.Entities != null)
         {
-            <div class="menu">
-                <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(menu.Id)">
-                    <div class="menu-head">
-                        <h1>@menu.Name</h1>
-                        <p class="established">@menu.Description</p>
-                    </div>
-                    <hr />
-                    @foreach (var menuItems in menu.MenuItems)
-                    {
-                        <section>
-                            <h2>Header</h2>
-                            <article class="item">
-                                <p class="flavor">@menuItems.Name</p>
-                                <p class="price">150</p>
-                            </article>
-                        </section>
-                    }
-                </a>
-            </div>
+            @foreach (var menu in Model?.Menus.Entities)
+            {
+                <div class="menu">
+                    <a style="text-decoration:none; color: inherit;" @onclick="() => GoToDetails(menu.Id)">
+                        <div class="menu-head">
+                            <h1>@menu.Name</h1>
+                            <p class="established">@menu.Description</p>
+                        </div>
+                        <hr />
+                        @* @foreach (var menuItems in menu.MenuItems)
+                        {
+                            <section>
+                                <h2>Header</h2>
+                                <article class="item">
+                                    <p class="flavor">@menuItems.Name</p>
+                                    <p class="price">150</p>
+                                </article>
+                            </section>
+                        } *@
+                    </a>
+                </div>
+            }
         }
     </div>
 
@@ -164,10 +163,10 @@
 </script>
 
 <style>
-    .container
-    {
+    .container {
         margin-bottom: 250px;
     }
+
     .menu-head h1 {
         font-size: 34px;
         margin-top: 0;
@@ -225,4 +224,4 @@
         text-align: right;
         width: 24%;
     }
-</style>  *@
+</style>
