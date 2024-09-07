@@ -17,13 +17,13 @@
                 var authState = await jwtProvider.GetAuthenticationStateAsync();
                 var user = authState.User;
 
-                IsAuthenticated = user.Identity.IsAuthenticated;
+                IsAuthenticated = user!.Identity!.IsAuthenticated;
 
                 if (IsAuthenticated)
                 {
-                    Name = user.Identity.Name;
-                    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    await CheckAdminRoleAsync(userId);
+                    Name = user!.Identity!.Name!;
+                    var userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+                    await CheckAdminRoleAsync(userId!);
                 }
             }
         }

@@ -22,7 +22,7 @@
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+        var IsAuthorized = user!.Identity!.IsAuthenticated && user.IsInRole("Admin");
 
         if (!IsAuthorized)
         {

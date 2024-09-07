@@ -1,3 +1,4 @@
+#pragma warning disable CS8613
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
@@ -71,7 +72,7 @@ public class VenueService : IVenueService
         return null;
     }
 
-    public async Task<Venue> GetVenueByIdAsync(int id)
+    public async Task<Venue?> GetVenueByIdAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.GetAsync($"/api/Venue/GetById?id={id}");

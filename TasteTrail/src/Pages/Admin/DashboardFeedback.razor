@@ -1,4 +1,4 @@
-﻿@page "/DashboardMenuItems"
+﻿@page "/DashboardFeedbacks"
 @attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
@@ -6,13 +6,13 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
-@inject IMenuItemService IMenuItemService
+@inject IFeedbackService IFeedbackService
 
 @code { 
     private int currentPage = 1;
     private int totalPages = 0;
     private int itemsPerPage = 9;
-    private MenuItemDto? menuItemDto { get; set; }
+    private FeedbackDto? feedbackDto { get; set; }
     private string searchQuery = string.Empty;
     private bool isLoading = true;
     private FilterType selectedFilter = FilterType.MostLiked;
@@ -24,10 +24,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadMenuItems();
+        await LoadFeedbacks();
     }
 
-    private async Task LoadMenuItems()
+    private async Task LoadFeedbacks()
     {
         isLoading = true;
         if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
@@ -46,15 +46,15 @@
             isLoading = true;
             try
             {
-                menuItemDto = await IMenuItemService.GetFilteredMenuItemsAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
-                if (menuItemDto != null)
+                feedbackDto = await IFeedbackService.GetFilteredFeedbacksAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
+                if (feedbackDto != null)
                 {
-                    totalPages = menuItemDto.AmountOfPages;
+                    totalPages = feedbackDto.AmountOfPages;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading menuItems: {ex.Message}");
+                Console.WriteLine($"Error loading feedbacks: {ex.Message}");
             }
             finally
             {
@@ -64,20 +64,20 @@
         }
     }
 
-     private async Task FilterMenuItems()
+     private async Task FilterFeedbacks()
     {
         currentPage = 1;
         await Refresh();
     }
 
-    private async Task  Refresh()
+    private async Task Refresh()
     {
-        await LoadMenuItems();
+        await LoadFeedbacks();
     } 
 
     private void GoToDetails(int id)
     {
-        NavigationManager.NavigateTo($"/MenuItem/{id}");
+        NavigationManager.NavigateTo($"/Feedback/{id}");
     }
 
     private async Task GoToPage(int pageNumber)
@@ -86,7 +86,7 @@
             return;
 
         currentPage = pageNumber;
-        await LoadMenuItems();
+        await LoadFeedbacks();
     }
 
     private async Task GoToPreviousPage()
@@ -118,37 +118,28 @@
         {
             await Refresh();
         }
-    }
-
-    private void CreateMenuItem()
-    { 
-        NavigationManager.NavigateTo("/MenuItem/Create", true); 
-    }
-    private void UpdateMenuItem(int id)
-    {   
-        NavigationManager.NavigateTo($"/MenuItem/Update/{id}", true); 
-    }
-    private async Task DeleteMenuItem(int id)
+    } 
+    private async Task DeleteFeedback(int id)
     {
     try
     {
-        await IMenuItemService.DeleteMenuItemAsync(id);
+        await IFeedbackService.DeleteFeedbackAsync(id);
         await Refresh();
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error deleting menuItem: {ex.Message}");
+        Console.WriteLine($"Error deleting feedback: {ex.Message}");
     }
     }
 
-     private async Task HandleChange(ChangeEventArgs e)
+     private  async Task HandleChange(ChangeEventArgs e)
     {
         if (Enum.TryParse(e!.Value!.ToString(), out FilterType filter))
         {
             selectedFilter = filter;
             Console.WriteLine($"Error loading venues: {(int)filter}");
 
-            await FilterMenuItems();
+            await FilterFeedbacks();
         }
     }
 
@@ -163,7 +154,7 @@
                         <option value="@filter">@SplitCamelCase(filter.ToString())</option>
                     }
                 </select>
-                <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for menuItems..."
+                <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for feedbacks..."
                     autocomplete="off" autofocus @onkeypress="HandleKeyPress">
                     <button @onclick="Refresh"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
@@ -232,35 +223,28 @@ else
                                 <thead>
                                     <tr>
                                         <th>  
-                                            <button  @onclick="() => CreateMenuItem()">
-                                                <i class="fa-solid fa-plus"></i>
-                                            </button> 
                                             <button  @onclick="() => Refresh()">
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>
                                         </th>
-                                        <th>Logo</th>
-                                        <th>Name</th>
-                                        <th>Description</th> 
-                                        <th>VenueId</th>
-                                        <th>User Id</th>
+                                        <th>Text</th>
+                                        <th>Rating</th>
+                                        <th>CreationDate</th> 
+                                        <th>User</th>
+                                        <th>Venue</th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var menuItem in menuItemDto!.Entities!)
+                                    @foreach (var feedback in feedbackDto!.Entities!)
                                     {
                                         <tr>
-                                            <td><button style="ml-4" @onclick="() => UpdateMenuItem(menuItem.Id)" > <i class="fa-solid fa-pen-to-square"></i></button></td>
-                                            <td @onclick="() => GoToDetails(menuItem.Id)">
-                                                <img src="@menuItem!.ImageUrlPath" alt="MenuItem Avatar" class="rounded-circle"
-                                                    width="50" height="50" />
-                                            </td>
-                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.Name</td>
-                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.Description</td>
-                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.Price</td> 
-                                            <td @onclick="() => GoToDetails(menuItem.Id)">@menuItem!.UserId</td>
-                                            <td><button @onclick="() => DeleteMenuItem(menuItem.Id)" class="btn btn-github btn-sm"> Delete</button></td>
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Text</td>
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Rating</td>
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.CreationDate</td>
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.User!.UserName</td> 
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Venue!.Name</td>
+                                            <td><button @onclick="() => DeleteFeedback(feedback.Id)" class="btn btn-github btn-sm"> Delete</button></td>
                                         </tr>
                                     }
                                 </tbody>
@@ -291,7 +275,7 @@ else
             </div>
             <div class="paginate-details">
                 <span>-</span>
-                <span class="count">@menuItemDto.AmountOfEntities</span>
+                <span class="count">@feedbackDto.AmountOfEntities</span>
                 <span>-</span>
             </div>
         </div>

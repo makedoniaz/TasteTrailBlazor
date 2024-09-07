@@ -1,3 +1,4 @@
+#pragma warning disable CS8613
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;

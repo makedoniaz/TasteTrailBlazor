@@ -195,7 +195,7 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
         if (response.IsSuccessStatusCode)
         {
             var accessToken = await response.Content.ReadFromJsonAsync<AccessToken>();
-            await this._localStorageService.SetItemAsStringAsync("jwt", accessToken.Jwt!);
+            await this._localStorageService.SetItemAsStringAsync("jwt", accessToken!.Jwt!);
             await this._localStorageService.SetItemAsStringAsync(
                 "refresh",
                 accessToken.Refresh.ToString()

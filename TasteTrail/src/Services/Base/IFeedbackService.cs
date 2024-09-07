@@ -5,10 +5,10 @@ namespace TasteTrailBlazor.Services.Base;
 
 public interface IFeedbackService
 {
-    Task<Feedback?> GetFeedbackByIdAsync(int id);
-    Task<List<Feedback>?> GetFeedbacksByCountAsync(int count);
-    Task<int> GetFeedbackCountAsync();
-    Task CreateFeedbackAsync(FeedbackDto feedbackDto);
-    Task UpdateFeedbackAsync(FeedbackDto feedbackDto);
-    Task DeleteFeedbackAsync(int id);
+    Task<FeedbackDto?> GetFilteredFeedbacksAsync(FilterType type, int pageNumber = 1, int pageSize = 10, string searchTerm = "");
+    Task<FeedbackDto?> GetFilteredFeedbacksAsync(FilterType type, int venueId, int pageNumber = 1, int pageSize = 10, string searchTerm = "");
+     Task<int> GetFeedbackCountAsync();
+    Task<bool> CreateFeedbackAsync(FeedbackDto feedbackDto);
+    Task<bool> UpdateFeedbackAsync(FeedbackDto feedbackDto);
+    Task<bool> DeleteFeedbackAsync(int id);
 }

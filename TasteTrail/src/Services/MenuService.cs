@@ -1,3 +1,4 @@
+#pragma warning disable CS8613
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
@@ -37,16 +38,20 @@ public class MenuService : IMenuService
         return client;
     }
 
-    public async Task<MenuDto> GetFilteredMenusAsync( 
+    public async Task<MenuDto?> GetFilteredMenusAsync(
         int pageNumber = 1,
-        int pageSize = 10, string searchTerm = "") 
+        int pageSize = 10,
+        string searchTerm = ""
+    )
     {
-        var client = await CreateAuthenticatedClientAsync(); 
-        var filterRequest = new { pageNumber = pageNumber, pageSize = pageSize, searchTerm = searchTerm };
-        var response = await client.PostAsJsonAsync(
-            $"/api/Menu/GetFiltered",
-            filterRequest
-        );
+        var client = await CreateAuthenticatedClientAsync();
+        var filterRequest = new
+        {
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            searchTerm = searchTerm,
+        };
+        var response = await client.PostAsJsonAsync($"/api/Menu/GetFiltered", filterRequest);
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadFromJsonAsync<MenuDto>();
@@ -59,13 +64,21 @@ public class MenuService : IMenuService
             return null;
         }
     }
-    public async Task<MenuDto> GetFilteredMenusAsync(
+
+    public async Task<MenuDto?> GetFilteredMenusAsync(
         int venueId,
         int pageNumber = 1,
-        int pageSize = 10, string searchTerm = "") 
+        int pageSize = 10,
+        string searchTerm = ""
+    )
     {
-        var client = await CreateAuthenticatedClientAsync(); 
-        var filterRequest = new { pageNumber = pageNumber, pageSize = pageSize, searchTerm = searchTerm };
+        var client = await CreateAuthenticatedClientAsync();
+        var filterRequest = new
+        {
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            searchTerm = searchTerm,
+        };
         var response = await client.PostAsJsonAsync(
             $"/api/Menu/GetFiltered?venueId={venueId}",
             filterRequest
@@ -119,7 +132,7 @@ public class MenuService : IMenuService
         }
     }
 
-    public async Task CreateMenuAsync(MenuDto menuDto)
+    public async Task<bool> CreateMenuAsync(MenuCreateDto menuDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PostAsJsonAsync("/api/Menu/Create", menuDto);
@@ -129,9 +142,10 @@ public class MenuService : IMenuService
                 $"Error creating menu: {response.StatusCode} - {response.ReasonPhrase}"
             );
         }
+        return response.IsSuccessStatusCode;
     }
 
-    public async Task UpdateMenuAsync(MenuDto menuDto)
+    public async Task<bool> UpdateMenuAsync(MenuDto menuDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PutAsJsonAsync("/api/Menu/Update", menuDto);
@@ -141,9 +155,10 @@ public class MenuService : IMenuService
                 $"Error updating menu: {response.StatusCode} - {response.ReasonPhrase}"
             );
         }
+        return response.IsSuccessStatusCode;
     }
 
-    public async Task DeleteMenuAsync(int id)
+    public async Task<bool> DeleteMenuAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.DeleteAsync($"/api/Menu/DeleteById?id={id}");
@@ -153,5 +168,6 @@ public class MenuService : IMenuService
                 $"Error deleting menu: {response.StatusCode} - {response.ReasonPhrase}"
             );
         }
+        return response.IsSuccessStatusCode;
     }
 }

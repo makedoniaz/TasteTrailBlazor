@@ -1,31 +1,17 @@
-﻿@page "/Venue/Create"
+﻿@page "/Menu/Create"
 @attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IVenueService IVenueService
+@inject IMenuService IMenuService
 
 
-<PageTitle>Create Venue</PageTitle>
+<PageTitle>Create Menu</PageTitle>
 
-@code {
-    private VenueCreateDto venue = new VenueCreateDto();
-    private StreamContent? _logoStream;
-    private string? _logoFileName;
-
-
-    private void OnFileSelected(ChangeEventArgs e)
-    {
-        var files = e.Value as IReadOnlyList<IBrowserFile>;
-        if (files != null && files.Count > 0)
-        {
-            var file = files[0];
-            _logoFileName = file.Name;
-            _logoStream = new StreamContent(file.OpenReadStream());
-        }
-    }
+@code { 
+    private MenuCreateDto menu = new MenuCreateDto(); 
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,13 +25,15 @@
             {
                 NavigationManager.NavigateTo("/");
             }
+
+            @* venues = await IMenuService.GetAllVenuesAsync(); *@
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Exception message: {ex.Message}");
         }
     }
-    private async Task CreateVenueAsync()
+    private async Task CreateMenuAsync()
     {
         if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
         {
@@ -62,23 +50,16 @@
 
             try
             {
-                @* if (selectedLogo != null)
-{
-bool uploadSuccess = await IVenueService.UploadVenueLogoAsync(venue.Id, selectedLogo);
-if (!uploadSuccess)
-{
-Console.WriteLine($"Error upload Logos: {uploadSuccess}");
-} *@
 
-                var result = await IVenueService.CreateVenueAsync(venue, _logoStream!, _logoFileName!);
+                var result = await IMenuService.CreateMenuAsync(menu);
                 if (result)
                 {
-                    NavigationManager.NavigateTo("/DashboardVenues");
+                    NavigationManager.NavigateTo("/DashboardMenus");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading venues: {ex.Message}");
+                Console.WriteLine($"Error loading menus: {ex.Message}");
             }
         }
 
@@ -90,64 +71,54 @@ Console.WriteLine($"Error upload Logos: {uploadSuccess}");
     <div class="row mb-3">
         <div class="container ">
 
-            <EditForm Model="venue" OnValidSubmit="CreateVenueAsync" class="createForm" enctype="multipart/form-data">
-                <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Create new Venue</h1>
+            <EditForm Model="menu" OnValidSubmit="CreateMenuAsync" class="createForm" menuItem>
+                <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Create new Menu</h1>
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
-                <div class="custom-file">
-                    <label class="input-file">
-                        <input type="file" class="input-file" name="file"
-                            @onchange="@(async e => OnFileSelected(e))">
-                        <span class="input-file-btn">Выберите файл</span>
-                        <span class="input-file-text">Максимум 10мб</span>
-                    </label>
-                    @* <label class="custom-file-label" for="logo">Upload Logo</label>
-                    <input type="file" class="form-control custom-file-input file"
-                    @onchange="@(async e => await OnFileSelected(e))" /> *@
-                </div>
+                @* <div class="custom-file">
+                <label class="input-file">
+                <input type="file" class="input-file" name="file"
+                @onchange="@(async e => await OnFileSelected(e))">
+                <span class="input-file-btn">Выберите файл</span>
+                <span class="input-file-text">Максимум 10мб</span>
+                </label>
+                </div> *@
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>
-                    <InputText id="name" class="form-control custom-file-input" placeholder="Input Venue Name..."
-                        @bind-Value="venue.Name" />
-                    <ValidationMessage For="@(() => venue.Name)" />
-                </div>
-
-                <div class="custom-file">
-                    <label class="custom-file-label" for="address">Address</label>
-                    <InputText id="address" class="form-control custom-file-input" placeholder="Input Venue Address..."
-                        @bind-Value="venue.Address" />
-                    <ValidationMessage For="@(() => venue.Address)" />
+                    <InputText id="name" class="form-control custom-file-input" placeholder="Input Menu name..."
+                        @bind-Value="menu.Name" />
+                    <ValidationMessage For="@(() => menu.Name)" />
                 </div>
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="description">Description</label>
                     <InputTextArea id="description" class="form-control custom-file-input"
-                        placeholder="Input Venue Description..." @bind-Value="venue.Description" />
-                    <ValidationMessage For="@(() => venue.Description)" />
+                        placeholder="Input Menu Description..." @bind-Value="menu.Description" />
+                    <ValidationMessage For="@(() => menu.Description)" />
                 </div>
 
-                <div class="custom-file">
-                    <label class="custom-file-label" for="contactNumber">Contact Number</label>
-                    <InputText id="contactNumber" class="form-control custom-file-input"
-                        placeholder="Input Venue ContactNumber..." @bind-Value="venue.ContactNumber" />
-                    <ValidationMessage For="@(() => venue.ContactNumber)" />
-                </div>
+                @* <div class="custom-file">
+                    <label class="custom-file-label" for="VenueId">Venue</label>
+                    <select id="VenueId" class="form-control custom-file-input" @bind="menu.VenueId">
+                        <option value="">Select Venue</option>
+                        @foreach (var venue in venues)
+                        {
+                            <option value="@venue.Id">@venue.Name</option>
+                        }
+                    </select>
+                    <ValidationMessage For="@(() => menu.VenueId)" />
+                </div> *@
 
-                <div class="custom-file">
-                    <label class="custom-file-label" for="email">Email</label>
-                    <InputText id="email" class="form-control custom-file-input" placeholder="Input Venue Email..."
-                        @bind-Value="venue.Email" />
-                    <ValidationMessage For="@(() => venue.Email)" />
-                </div>
+                @* <div class="custom-file">
+                <label class="custom-file-label" for="contactNumber">Contact Number</label>
+                <InputText id="contactNumber" class="form-control custom-file-input"
+                placeholder="Input Menu ContactNumber..." @bind-Value="menu.ContactNumber" />
+                <ValidationMessage For="@(() => menu.ContactNumber)" />
+                </div> *@
 
-                <div class="custom-file">
-                    <label class="custom-file-label" for="averagePrice">Average Price</label>
-                    <InputNumber id="averagePrice" class="form-control custom-file-input"
-                        placeholder="Input Average Price..." @bind-Value="venue.AveragePrice" />
-                    <ValidationMessage For="@(() => venue.AveragePrice)" />
-                </div>
+
 
                 <button type="submit" <span>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -157,7 +128,7 @@ Console.WriteLine($"Error upload Logos: {uploadSuccess}");
                     </span>
                 </button>
 
-            </EditForm> 
+            </EditForm>
         </div>
     </div>
 </div>
@@ -270,17 +241,19 @@ Console.WriteLine($"Error upload Logos: {uploadSuccess}");
         width: 0;
         height: 0;
     }
- 
+
     .createForm .input-file input[type=file]:focus+.input-file-btn {
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
-    } 
+    }
+
     .createForm .input-file:hover .input-file-btn {
         background-color: #59be6e;
     }
 
     .createForm .input-file:active .input-file-btn {
         background-color: #2E703A;
-    } 
+    }
+
     .createForm .input-file input[type=file]:disabled+.input-file-btn {
         background-color: #eee;
     }
@@ -310,21 +283,21 @@ Console.WriteLine($"Error upload Logos: {uploadSuccess}");
 </style>
 
 <script>
-     document.addEventListener('DOMContentLoaded', function () {
-    const fileInput = document.querySelector('.input-file input[type=file]');
-    const fileNameSpan = document.querySelector('.input-file-text');
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.querySelector('.input-file input[type=file]');
+        const fileNameSpan = document.querySelector('.input-file-text');
         console.log(111);
         console.log(fileInput);
         console.log(fileNameSpan);
 
-    if (fileInput && fileNameSpan) {
-        fileInput.addEventListener('change', function () {
-            const file = this.files[0];
-            if (file) {
-                fileNameSpan.textContent = file.name;
-            }
-        });
-    }
-});
+        if (fileInput && fileNameSpan) {
+            fileInput.addEventListener('change', function () {
+                const file = this.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name;
+                }
+            });
+        }
+    });
 
 </script>

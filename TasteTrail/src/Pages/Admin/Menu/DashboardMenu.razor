@@ -11,7 +11,7 @@
 @code { 
     private int currentPage = 1;
     private int totalPages = 0;
-    private int itemsPerPage = 5;
+    private int itemsPerPage = 9;
     private MenuDto? menuDto { get; set; }
     private string searchQuery = string.Empty;
     private bool isLoading = true;
@@ -29,7 +29,7 @@
             var authState = await jwtProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            var isAuthenticated = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (!isAuthenticated)
             {
@@ -63,10 +63,10 @@
         await LoadMenus();
     }
 
-    private void FilterMenus()
+    private async Task FilterMenus()
     {
         currentPage = 1;
-        Refresh();
+        await Refresh();
     }
 
     private void GoToDetails(int id)
@@ -114,11 +114,11 @@
         }
     }
 
-    private async Task CreateMenu()
+    private void CreateMenu()
     { 
         NavigationManager.NavigateTo("/Menu/Create", true); 
     }
-    private async Task UpdateMenu(int id)
+    private void UpdateMenu(int id)
     {   
         NavigationManager.NavigateTo($"/Menu/Update/{id}", true); 
     }
@@ -225,7 +225,7 @@ else
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var menu in menuDto.Entities)
+                                    @foreach (var menu in menuDto!.Entities!)
                                     {
                                         <tr>
                                             <td><button style="ml-4" @onclick="() => UpdateMenu(menu.Id)" > <i class="fa-solid fa-pen-to-square"></i></button></td>

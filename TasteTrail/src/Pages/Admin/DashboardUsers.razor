@@ -12,7 +12,7 @@
 
     private int currentPage = 1;
     private int totalPages = 0;
-    private int itemsPerPage = 5;
+    private int itemsPerPage = 9;
     private UserListDto? usersDto { get; set; }
     private string searchQuery = string.Empty;
     private FilterType selectedFilter = FilterType.Muted;
@@ -31,7 +31,7 @@
             var authState = await jwtProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            var isAuthenticated = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (!isAuthenticated)
             {
@@ -64,10 +64,10 @@
         await LoadUsers();
     }
 
-    private void FilterUsers()
+    private async Task FilterUsers()
     {
         currentPage = 1;
-        Refresh();
+        await Refresh();
     }
     private async Task ToggleMute(string userId)
     {
@@ -76,10 +76,10 @@
             var success = await IAdminPanelService.ToggleMuteAsync(userId);
             if (success)
             {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
+                var updatedUser = usersDto!.Entities!.FirstOrDefault(u => u.User!.Id == userId);
                 if (updatedUser != null)
                 {
-                    updatedUser.User.IsMuted = !updatedUser.User.IsMuted;
+                    updatedUser!.User!.IsMuted = !updatedUser!.User!.IsMuted;
                 }
             }
             else
@@ -97,13 +97,13 @@
     {
         try
         {
-            var success = await IAdminPanelService.ToggleBanAsync(userId);
+            var success = await IAdminPanelService.ToggleBanAsync(userId!);
             if (success)
             {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
+                var updatedUser = usersDto!.Entities!.FirstOrDefault(u => u.User!.Id == userId!);
                 if (updatedUser != null)
                 {
-                    updatedUser.User.IsBanned = !updatedUser.User.IsBanned;
+                    updatedUser!.User!.IsBanned = !updatedUser!.User!.IsBanned;
                 }
             }
             else
@@ -121,14 +121,14 @@
     {
         try
         {
-            var success = await IAdminPanelService.AssignRoleAsync(userId, UserRoles.Admin);
+            var success = await IAdminPanelService.AssignRoleAsync(userId!, UserRoles.Admin);
             if (success)
             {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
+                var updatedUser = usersDto!.Entities!.FirstOrDefault(u => u.User!.Id == userId);
                 if (updatedUser != null)
                 {
-                    updatedUser.Roles.Add(UserRoles.Admin.ToString());
-                    updatedUser.Roles.Remove(UserRoles.User.ToString());
+                    updatedUser.Roles!.Add(UserRoles.Admin.ToString());
+                    updatedUser.Roles!.Remove(UserRoles.User.ToString());
                 }
             }
             else
@@ -149,11 +149,11 @@
             var success = await IAdminPanelService.RemoveRoleAsync(userId, UserRoles.Admin);
             if (success)
             {
-                var updatedUser = usersDto.Entities.FirstOrDefault(u => u.User.Id == userId);
+                var updatedUser = usersDto!.Entities!.FirstOrDefault(u => u.User!.Id == userId);
                 if (updatedUser != null)
                 {
-                    updatedUser.Roles.Remove(UserRoles.Admin.ToString());
-                    updatedUser.Roles.Add(UserRoles.User.ToString());
+                    updatedUser!.Roles!.Remove(UserRoles.Admin.ToString());
+                    updatedUser!.Roles!.Add(UserRoles.User.ToString());
                 }
             }
             else
@@ -199,13 +199,13 @@
         }
     }
 
-    private void HandleChange(ChangeEventArgs e)
+    private async Task HandleChange(ChangeEventArgs e)
     {
-        if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
+        if (Enum.TryParse(e!.Value!.ToString(), out FilterType filter))
         {
             selectedFilter = filter; 
 
-            FilterUsers();
+            await FilterUsers();
         }
     }
 
@@ -314,55 +314,55 @@ else
                                 </thead>
                                 <tbody>
                                     @if (usersDto != null) {
-                                    @foreach (var user in usersDto.Entities)
+                                    @foreach (var userdto in usersDto!.Entities!)
                                     {
                                         <tr>
                                             <td></td>
                                             <td>
-                                                @if (string.IsNullOrEmpty(user!.User!.AvatarPath))
+                                                @if (string.IsNullOrEmpty(userdto!.User!.AvatarPath))
                                                 {
                                                     <img src="../images/user.png" alt="User Avatar" class="rounded-circle"
                                                         width="50" height="50" />
                                                 }
                                                 else
                                                 {
-                                                    <img src="@user!.User!.AvatarPath" alt="User Avatar" class="rounded-circle"
+                                                    <img src="@userdto!.User!.AvatarPath" alt="User Avatar" class="rounded-circle"
                                                         width="50" height="50" />
                                                 }
                                             </td>
-                                            <td>@user!.User!.UserName</td>
-                                            <td>@user!.User!.Email</td>
-                                            <td>@string.Join(", ", user!.Roles)</td>
+                                            <td>@userdto!.User!.UserName</td>
+                                            <td>@userdto!.User!.Email</td>
+                                            <td>@string.Join(", ", userdto!.Roles!)</td>
                                             <td>
                                                 <label
-                                                    class="badge @(user!.User!.IsBanned ? "badge-danger" : user!.User!.IsMuted ? "badge-warning" : "badge-success")">
-                                                    @(user!.User!.IsBanned ? "Banned" : user!.User!.IsMuted ? "Muted" :
+                                                    class="badge @(userdto!.User!.IsBanned ? "badge-danger" : userdto!.User!.IsMuted ? "badge-warning" : "badge-success")">
+                                                    @(userdto!.User!.IsBanned ? "Banned" : userdto!.User!.IsMuted ? "Muted" :
                                                         "Active")
                                                 </label>
                                             </td>
                                             <td>
-                                                @if (user!.Roles.Contains("Admin"))
+                                                @if (userdto!.Roles!.Contains("Admin"))
                                                 {
-                                                    <button @onclick="() => RemoveRole(user!.User!.Id)"
+                                                    <button @onclick="() => RemoveRole(userdto!.User!.Id!)"
                                                         class="btn btn-github btn-sm">
                                                         Remove Admin
                                                     </button>
                                                 }
                                                 else
                                                 {
-                                                    <button @onclick="() => AssignRole(user!.User!.Id)" class="btn btn-info btn-sm">
+                                                    <button @onclick="() => AssignRole(userdto!.User!.Id!)" class="btn btn-info btn-sm">
                                                         Assign Admin
                                                     </button>
                                                 }
                                             </td>
                                             <td>
-                                                <button @onclick="() => ToggleMute(user!.User!.Id)"
+                                                <button @onclick="() => ToggleMute(userdto!.User!.Id!)"
                                                     class="btn btn-warning btn-sm">
-                                                    @(user!.User!.IsMuted ? "Unmute" : "Mute")
+                                                    @(userdto!.User!.IsMuted ? "Unmute" : "Mute")
                                                 </button>
-                                                <button @onclick="() => ToggleBan(user!.User!.Id)"
+                                                <button @onclick="() => ToggleBan(userdto!.User!.Id!)"
                                                     class="btn btn-danger btn-sm">
-                                                    @(user!.User!.IsBanned ? "Unban" : "Ban")
+                                                    @(userdto!.User!.IsBanned ? "Unban" : "Ban")
                                                 </button>
                                             </td>
                                         </tr>
@@ -375,30 +375,29 @@ else
                 </div>
             </div>
         </div>
-        <div class="row">
+         <div class="row">
             <div class="container">
                 <button class="prevBtn" @onclick="GoToPreviousPage" disabled="@(!isLoading && currentPage == 1)">
-                    <span class="prevBtn-icon">
-                        <!-- SVG for previous button -->
-                    </span>
-                    <span class="prevBtn-text">Prev</span>
+                    <span class="prevBtn-icon"><i class="fa-solid fa-angle-left m-1"
+                            style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
+                    <span class="prevBtn-text" style='@(currentPage == 1 ? "color: #C7C5C5" : "#2a3b52 ")'>Prev</span>
                 </button>
                 <div class="containerBtns">
-                    @for (int i = 1; i <= totalPages; i++)
+                    @foreach (var i in GetPageNumbers())
                     {
                         <button class="@(i == currentPage ? "activeBtn" : "")" @onclick="() => GoToPage(i)">@i</button>
                     }
                 </div>
-                <button class="nextBtn" @onclick="GoToNextPage" disabled="@(!isLoading && currentPage == totalPages)">
-                    <span class="nextBtn-text">Next</span>
-                    <span class="nextBtn-icon">
-                        <!-- SVG for next button -->
-                    </span>
+                <button class="nextBtn " @onclick="GoToNextPage" disabled="@((!isLoading && currentPage == totalPages) || totalPages == 0)">
+                    <span class="nextBtn-text" style='@((!isLoading && currentPage == totalPages) || totalPages == 0 ? "color: #C7C5C5" : "#2a3b52 ")'>Next</span>
+                    <span class="nextBtn-icon"><i class="fa-solid fa-angle-right m-1"
+                            style='@((!isLoading && currentPage == totalPages) || totalPages == 0 ? "color: #C7C5C5" : "#2a3b52 ")'></i></span>
                 </button>
             </div>
             <div class="paginate-details">
                 <span>-</span>
-                <span class="count">@usersDto.AmountOfEntities</span> <span>-</span>
+                <span class="count">@usersDto!.AmountOfEntities</span>
+                <span>-</span>
             </div>
         </div>
 }

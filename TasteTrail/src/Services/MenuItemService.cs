@@ -1,3 +1,4 @@
+#pragma warning disable CS8613
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
@@ -5,7 +6,7 @@ using TasteTrailBlazor.Dtos;
 using TasteTrailBlazor.Models;
 using TasteTrailBlazor.Services.Base;
 
-namespace TasteTrailBlazor.Services.Base;
+namespace TasteTrailBlazor.Services;
 
 public class MenuItemService : IMenuItemService
 {
@@ -54,7 +55,7 @@ public class MenuItemService : IMenuItemService
         }
     }
 
-    public async Task<MenuItemDto> GetFilteredMenuItemsAsync(
+    public async Task<MenuItemDto?> GetFilteredMenuItemsAsync(
         FilterType type,
         int pageNumber = 1,
         int pageSize = 10,
@@ -83,8 +84,8 @@ public class MenuItemService : IMenuItemService
         }
     }
 
-    public async Task<MenuItemDto> GetFilteredMenuItemsAsync(
-        FilterType type, 
+    public async Task<MenuItemDto?> GetFilteredMenuItemsAsync(
+        FilterType type,
         int menuId,
         int pageNumber = 1,
         int pageSize = 10,
@@ -116,7 +117,7 @@ public class MenuItemService : IMenuItemService
         }
     }
 
-    public async Task CreateMenuItemAsync(MenuItemDto menuItemDto)
+    public async Task<bool> CreateMenuItemAsync(MenuItemCreateDto menuItemDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PostAsJsonAsync("/api/MenuItem/Create", menuItemDto);
@@ -126,9 +127,10 @@ public class MenuItemService : IMenuItemService
                 $"Error creating menu item: {response.StatusCode} - {response.ReasonPhrase}"
             );
         }
+        return response.IsSuccessStatusCode;
     }
 
-    public async Task UpdateMenuItemAsync(MenuItemDto menuItemDto)
+    public async Task<bool> UpdateMenuItemAsync(MenuItemDto menuItemDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PutAsJsonAsync("/api/MenuItem/Update", menuItemDto);
@@ -138,9 +140,10 @@ public class MenuItemService : IMenuItemService
                 $"Error updating menu item: {response.StatusCode} - {response.ReasonPhrase}"
             );
         }
+        return response.IsSuccessStatusCode;
     }
 
-    public async Task DeleteMenuItemAsync(int id)
+    public async Task<bool> DeleteMenuItemAsync(int id)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.DeleteAsync($"/api/MenuItem/DeleteById?id={id}");
@@ -150,5 +153,6 @@ public class MenuItemService : IMenuItemService
                 $"Error deleting menu item: {response.StatusCode} - {response.ReasonPhrase}"
             );
         }
+        return response.IsSuccessStatusCode;
     }
 }

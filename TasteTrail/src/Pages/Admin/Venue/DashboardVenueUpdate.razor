@@ -20,7 +20,7 @@
     private string? _logoFileName;
 
 
-    private async Task OnFileSelected(ChangeEventArgs e)
+    private void OnFileSelected(ChangeEventArgs e)
     {
         var files = e.Value as IReadOnlyList<IBrowserFile>;
         if (files != null && files.Count > 0)
@@ -37,7 +37,7 @@
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
-            var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var IsAuthorized = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (!IsAuthorized)
             {
@@ -56,7 +56,7 @@
             var authState = await jwtProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            var isAuthenticated = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (!isAuthenticated)
             {
@@ -102,9 +102,9 @@ NavigationManager.NavigateTo("/DashboardVenues");
                 <div class="custom-file">
                     <label class="input-file">
                         <input type="file" class="input-file" name="file"
-                            @onchange="@(async e => await OnFileSelected(e))">
-                        <span class="input-file-btn">Выберите файл</span>
-                        <span class="input-file-text">Максимум 10мб</span>
+                            @onchange="@(async e => OnFileSelected(e))">
+                        <span class="input-file-btn">Select file </span>
+                        <span class="input-file-text">Max 10 mb</span>
                     </label>
                     @* <label class="custom-file-label" for="logo">Upload Logo</label>
                     <input type="file" class="form-control custom-file-input file"

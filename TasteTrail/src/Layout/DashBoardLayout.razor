@@ -25,7 +25,7 @@
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
-            var IsAuthorized = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var IsAuthorized = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (!IsAuthorized)
             {
@@ -52,7 +52,7 @@
             await localStorageService.RemoveItemAsync("refresh");
 
             var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
-            authProvider.NotifyUserLogout();
+            await authProvider!.NotifyUserLogout();
 
             // Redirect to the login page
             NavigationManager.NavigateTo("/Login", true);
@@ -132,19 +132,25 @@
                 <li class="nav-item">
                     <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/DashboardVenues">
                         <i class="icon-head menu-icon"></i>
-                        <span class="menu-title">Venue List</span>
+                        <span class="menu-title">Venues</span>
                     </NavLink>
                 </li>
                 <li class="nav-item">
                     <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/DashboardMenus">
                         <i class="icon-head menu-icon"></i>
-                        <span class="menu-title">Menu List</span>
+                        <span class="menu-title">Menus </span>
                     </NavLink>
                 </li> 
                 <li class="nav-item">
                     <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/DashboardMenuItems">
                         <i class="icon-head menu-icon"></i>
-                        <span class="menu-title">Menu Items List</span>
+                        <span class="menu-title">Menu Items </span>
+                    </NavLink>
+                </li> 
+                <li class="nav-item">
+                    <NavLink class="nav-link text-gray border-1 p-3 m-2" href="/DashboardFeedbacks">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Feedbacks</span>
                     </NavLink>
                 </li> 
                 @* <li class="nav-item">
@@ -154,10 +160,7 @@
                 </NavLink>
                 </li> *@
             </ul>
-        </nav>
-
-
-
+        </nav> 
         @Body
     </div>
 

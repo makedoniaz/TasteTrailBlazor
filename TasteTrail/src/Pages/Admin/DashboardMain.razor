@@ -22,7 +22,7 @@
             var authState = await jwtProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            var IsAuthenticated = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var IsAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (IsAuthenticated)
             {

@@ -12,11 +12,16 @@
     
     private int currentPage = 1;
     private int totalPages = 0;
-    private int itemsPerPage = 5;
+    private int itemsPerPage = 9;
     private VenueDto? venueDto { get; set; }
     private string searchQuery = string.Empty;
     private FilterType selectedFilter = FilterType.OldestFirst;
     private bool isLoading = true;
+
+    public static string SplitCamelCase(string input)
+{
+    return System.Text.RegularExpressions.Regex.Replace(input, "(\\B[A-Z])", " $1");
+}
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,7 +36,7 @@
             var authState = await jwtProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            var isAuthenticated = user.Identity.IsAuthenticated && user.IsInRole("Admin");
+            var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
 
             if (!isAuthenticated)
             {
@@ -65,10 +70,10 @@
         await LoadVenues();
     }
 
-    private void FilterVenues()
+    private async Task FilterVenues()
     {
         currentPage = 1;
-        Refresh();
+        await Refresh();
     }
 
     private void GoToDetails(int id)
@@ -108,14 +113,14 @@
         }
     }
 
-    private void HandleChange(ChangeEventArgs e)
+    private async Task HandleChange(ChangeEventArgs e)
     {
-        if (Enum.TryParse(e.Value.ToString(), out FilterType filter))
+        if (Enum.TryParse(e!.Value!.ToString(), out FilterType filter))
         {
             selectedFilter = filter;
             Console.WriteLine($"Error loading venues: {(int)filter}");
 
-            FilterVenues();
+            await FilterVenues();
         }
     }
 
@@ -127,11 +132,11 @@
         }
     }
 
-    private async Task CreateVenue()
+    private void CreateVenue()
     { 
         NavigationManager.NavigateTo("/Venue/Create", true); 
     }
-    private async Task UpdateVenue(int id)
+    private void UpdateVenue(int id)
     {   
         NavigationManager.NavigateTo($"/Venue/Update/{id}", true); 
     } 
@@ -158,7 +163,7 @@
                     {
                         if( filter != FilterType.MostLiked && filter != FilterType.Muted && filter != FilterType.NotMuted && filter != FilterType.Banned && filter != FilterType.NotBanned )
                         {
-                        <option value="@filter">@filter</option>
+                        <option value="@filter">@SplitCamelCase(filter.ToString())</option>
                         }
                     }
                 </select>
@@ -231,9 +236,9 @@ else
                                 <thead>
                                     <tr>
                                         <th>  
-                                            <button  @onclick="() => CreateVenue()">
+                                            <button @onclick="() => CreateVenue()" data-bs-toggle="tooltip" data-bs-placement="top" title="Create new Venue">
                                                 <i class="fa-solid fa-plus"></i>
-                                            </button> 
+                                            </button>
                                             <button  @onclick="() => Refresh()">
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>
@@ -251,11 +256,18 @@ else
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var venue in venueDto.Entities)
+                                    @foreach (var venue in venueDto!.Entities!)
                                     {
  
                                         <tr>
-                                            <td><button style="ml-4" @onclick="() => UpdateVenue(venue.Id)" > <i class="fa-solid fa-pen-to-square"></i></button></td>
+                                            <td>
+                                            <button @onclick="() => CreateVenue()" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Create new Venue">
+                                                    <i class="fa-regular fa-square-plus"></i>
+                                                </button>
+                                                <button class="ml-4" @onclick="() => UpdateVenue(venue.Id)" > 
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                            </td>
                                             <td @onclick="() => GoToDetails(venue.Id)">
                                                 <img src="@venue!.LogoUrlPath" alt="Venue Avatar" class="rounded-circle"
                                                     width="50" height="50" />
@@ -702,6 +714,8 @@ else
     *{
         font-weight: 600;
     }
+
+    
     tr>td:first-child {
         width: 1px;
     }
@@ -846,3 +860,12 @@ else
         background: white;
     }
 </style>
+
+<script>
+     document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
