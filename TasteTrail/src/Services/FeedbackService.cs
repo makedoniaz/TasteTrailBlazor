@@ -23,7 +23,7 @@ public class FeedbackService : IFeedbackService
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await _localStorageService.GetItemAsStringAsync("jwt");
+        var token = await _localStorageService.GetItemAsStringAsync("AccessToken");
         var client = _httpClientFactory.CreateClient("ExperincePolicy");
 
         if (!string.IsNullOrEmpty(token))
@@ -55,7 +55,7 @@ public class FeedbackService : IFeedbackService
     }
 
     public async Task<FeedbackDto?> GetFilteredFeedbacksAsync(
-        FilterType type,
+        FilterType type = FilterType.NoFilter,
         int pageNumber = 1,
         int pageSize = 10,
         string searchTerm = ""
@@ -64,7 +64,7 @@ public class FeedbackService : IFeedbackService
         var client = await CreateAuthenticatedClientAsync();
         var filterRequest = new
         {
-            type = type,
+            type = type != FilterType.NoFilter ? (int?)type - 1 - 1 : null,
             pageNumber = pageNumber,
             pageSize = pageSize,
             searchTerm = searchTerm,
@@ -84,8 +84,8 @@ public class FeedbackService : IFeedbackService
     }
 
     public async Task<FeedbackDto?> GetFilteredFeedbacksAsync(
-        FilterType type,
         int venueId,
+        FilterType type = FilterType.NoFilter,
         int pageNumber = 1,
         int pageSize = 10,
         string searchTerm = ""
@@ -94,7 +94,7 @@ public class FeedbackService : IFeedbackService
         var client = await CreateAuthenticatedClientAsync();
         var filterRequest = new
         {
-            type = type,
+            type = type != FilterType.NoFilter ? (int?)type - 1 : null,
             pageNumber = pageNumber,
             pageSize = pageSize,
             searchTerm = searchTerm,

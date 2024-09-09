@@ -23,7 +23,7 @@ public class UserService : IUserService
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await _localStorageService.GetItemAsStringAsync("jwt");
+        var token = await _localStorageService.GetItemAsStringAsync("AccessToken");
         var client = _httpClientFactory.CreateClient("AuthPolicy");
 
         if (!string.IsNullOrEmpty(token))

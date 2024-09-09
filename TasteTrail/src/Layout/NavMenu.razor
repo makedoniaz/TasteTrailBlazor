@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider authenticationStateProvider
 @inject IUserService IUserService
+@inject LoginService LoginService
 
 @code {
     private bool IsAuthenticated = false;
@@ -21,36 +22,19 @@
 
                 if (IsAuthenticated)
                 {
-                    Name = user!.Identity!.Name!;
-                    var userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-                    await CheckAdminRoleAsync(userId!);
+                     Name = user!.Identity!.Name!;
+                    var roleClaim = user.FindFirst(ClaimTypes.Role);
+
+                    if (roleClaim != null && roleClaim.Value.Contains("Admin"))
+                    {
+                        IsAdmin = true;
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Exception message: {ex.Message}");
-        }
-    }
-
-    private async Task CheckAdminRoleAsync(string userId)
-    {
-        try
-        {
-            if (userId != null)
-            {
-                var user = await IUserService.GetUserRolesAsync(userId);
-
-                if (user != null && user.Roles != null && user.Roles.Contains("Admin"))
-                {
-                    IsAdmin = true;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception message: {ex.Message}");
-            NavigationManager.NavigateTo($"/Login", true);
         }
     }
 
@@ -58,10 +42,10 @@
     {
         try
         {
-            if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
-            {
-                await jwtProvider.LogoutAsync();
-            }
+            await LoginService.LogoutAsync();
+
+            // Redirect to the login page
+            NavigationManager.NavigateTo("/Login", true);
         }
         catch (Exception ex)
         {

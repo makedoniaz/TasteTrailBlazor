@@ -24,7 +24,7 @@ public class MenuItemService : IMenuItemService
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await _localStorageService.GetItemAsStringAsync("jwt");
+        var token = await _localStorageService.GetItemAsStringAsync("AccessToken");
         var client = _httpClientFactory.CreateClient("ExperincePolicy");
 
         if (!string.IsNullOrEmpty(token))
@@ -56,7 +56,7 @@ public class MenuItemService : IMenuItemService
     }
 
     public async Task<MenuItemDto?> GetFilteredMenuItemsAsync(
-        FilterType type,
+        FilterType type = FilterType.NoFilter,
         int pageNumber = 1,
         int pageSize = 10,
         string searchTerm = ""
@@ -65,7 +65,7 @@ public class MenuItemService : IMenuItemService
         var client = await CreateAuthenticatedClientAsync();
         var filterRequest = new
         {
-            type = (int)type,
+            type = type != FilterType.NoFilter ? (int?)type - 1 - 1 : null,
             pageNumber = pageNumber,
             pageSize = pageSize,
             searchTerm = searchTerm,
@@ -85,8 +85,8 @@ public class MenuItemService : IMenuItemService
     }
 
     public async Task<MenuItemDto?> GetFilteredMenuItemsAsync(
-        FilterType type,
         int menuId,
+        FilterType type = FilterType.NoFilter,
         int pageNumber = 1,
         int pageSize = 10,
         string searchTerm = ""
@@ -95,7 +95,7 @@ public class MenuItemService : IMenuItemService
         var client = await CreateAuthenticatedClientAsync();
         var filterRequest = new
         {
-            type = (int)type,
+            type = type != FilterType.NoFilter ? (int?)type - 1 : null,
             pageNumber = pageNumber,
             pageSize = pageSize,
             searchTerm = searchTerm,
@@ -117,9 +117,27 @@ public class MenuItemService : IMenuItemService
         }
     }
 
-    public async Task<bool> CreateMenuItemAsync(MenuItemCreateDto menuItemDto)
+    public async Task<bool> CreateMenuItemAsync(
+        MenuItemCreateDto menuItemDto,
+        StreamContent imageStream,
+        string imageFileName
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
+        using var formData = new MultipartFormDataContent();
+
+        formData.Add(new StringContent(menuItemDto.Name ?? string.Empty), nameof(menuItemDto.Name));
+        formData.Add(
+            new StringContent(menuItemDto.Description ?? string.Empty),
+            nameof(menuItemDto.Description)
+        );
+        formData.Add(new StringContent(menuItemDto.Price.ToString()), nameof(menuItemDto.Price));
+
+        if (imageStream != null && !string.IsNullOrEmpty(imageFileName))
+        {
+            formData.Add(imageStream, "image", imageFileName);
+        }
+
         var response = await client.PostAsJsonAsync("/api/MenuItem/Create", menuItemDto);
         if (!response.IsSuccessStatusCode)
         {

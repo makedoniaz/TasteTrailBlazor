@@ -15,7 +15,7 @@
     private int itemsPerPage = 9;
     private UserListDto? usersDto { get; set; }
     private string searchQuery = string.Empty;
-    private FilterType selectedFilter = FilterType.Muted;
+    private FilterType selectedFilter = FilterType.NoFilter;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -217,6 +217,11 @@
         }
     }
 
+    public static string SplitCamelCase(string input)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(input, "(\\B[A-Z])", " $1");
+    }
+
 }
   <div class="content-wrapper">
         <div class="row mb-3">
@@ -224,9 +229,9 @@
                 <select @onchange="HandleChange">
                     @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
                     {
-                         if(filter == FilterType.Muted || filter == FilterType.NotMuted || filter == FilterType.Banned || filter == FilterType.NotBanned )
+                         if(filter == FilterType.Muted || filter == FilterType.NotMuted || filter == FilterType.Banned || filter == FilterType.NotBanned || filter == FilterType.NoFilter )
                         {
-                        <option value="@filter">@filter</option>
+                            <option value="@filter">@SplitCamelCase(filter.ToString())</option>
                         }
                     }
                 </select>

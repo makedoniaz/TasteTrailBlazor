@@ -1,16 +1,19 @@
-﻿@page "/MenuItem/Create"
+﻿@page "/MenuItem/Create/{Id:int?}"
 @attribute [Authorize(Policy = "AdminOnly")]
-@layout DashBoardLayout
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IMenuItemService IMenuItemService
 
+@layout DashBoardLayout
 
 <PageTitle>Create MenuItem</PageTitle>
 
 @code {
+    [Parameter]
+    public int Id { get; set; }
+
     private MenuItemCreateDto menuItem = new MenuItemCreateDto(); 
  
     protected override async Task OnInitializedAsync()
@@ -48,11 +51,11 @@
 
             try
             { 
-                var result = await IMenuItemService.CreateMenuItemAsync(menuItem);
-                if (result)
+                //var result = await IMenuItemService.CreateMenuItemAsync(menuItem);
+                @* if (result)
                 {
                     NavigationManager.NavigateTo("/DashboardMenuItems");
-                }
+                } *@
             }
             catch (Exception ex)
             {

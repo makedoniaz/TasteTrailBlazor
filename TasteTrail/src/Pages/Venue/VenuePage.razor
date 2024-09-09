@@ -35,8 +35,7 @@
             venueDto = await IVenueService.GetFilteredVenuesAsync(selectedFilter, currentPage, itemsPerPage, searchQuery);
             if (venueDto != null)
             {
-                totalPages = venueDto.AmountOfPages;
-                Console.WriteLine(totalPages);
+                totalPages = venueDto.AmountOfPages; 
             }
         }
         catch (Exception ex)

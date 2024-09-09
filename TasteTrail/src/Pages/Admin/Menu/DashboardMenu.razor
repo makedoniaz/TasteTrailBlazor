@@ -9,6 +9,7 @@
 @inject IMenuService IMenuService
 
 @code { 
+    private string? userId { get; set; }
     private int currentPage = 1;
     private int totalPages = 0;
     private int itemsPerPage = 9;
@@ -30,6 +31,7 @@
             var user = authState.User;
 
             var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             if (!isAuthenticated)
             {
@@ -228,7 +230,12 @@ else
                                     @foreach (var menu in menuDto!.Entities!)
                                     {
                                         <tr>
-                                            <td><button style="ml-4" @onclick="() => UpdateMenu(menu.Id)" > <i class="fa-solid fa-pen-to-square"></i></button></td>
+                                            <td>
+                                                @if(@userId == @menu!.UserId)
+                                                {
+                                                    <button style="ml-4" @onclick="() => UpdateMenu(menu.Id)" > <i class="fa-solid fa-pen-to-square"></i></button>
+                                                }
+                                            </td>
                                             <td @onclick="() => GoToDetails(menu.Id)">
                                                 <img src="@menu!.imageUrlPath" alt="Menu Avatar" class="rounded-circle"
                                                     width="50" height="50" />

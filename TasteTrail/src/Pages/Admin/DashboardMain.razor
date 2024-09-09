@@ -42,7 +42,7 @@
         {
             Model.TotalUsers = await IAdminPanelService.GetUsersCountAsync();
             Model.TotalVenues = await IVenueService.GetVenueCountAsync();
-             Model.TotalFeedbacks = await IFeedbackService.GetFeedbackCountAsync();  
+            Model.TotalFeedbacks = await IFeedbackService.GetFeedbackCountAsync();
 
             StateHasChanged();
             @* await RenderCharts(); *@
@@ -54,17 +54,17 @@
     }
 
     @* private async Task RenderCharts()
-    {
-        if (Model.TotalUsers > 0)
-        {
-            await JS.InvokeVoidAsync("renderUserChart", Model.TotalUsers);
-        }
+{
+if (Model.TotalUsers > 0)
+{
+await JS.InvokeVoidAsync("renderUserChart", Model.TotalUsers);
+}
 
-        if (Model.TotalFeedbacks > 0)
-        {
-            await JS.InvokeVoidAsync("renderFeedbackChart", Model.TotalFeedbacks);
-        }
-    }  *@
+if (Model.TotalFeedbacks > 0)
+{
+await JS.InvokeVoidAsync("renderFeedbackChart", Model.TotalFeedbacks);
+}
+} *@
 }
 
 <div class="main-panel">
@@ -180,10 +180,11 @@
 
 <style>
     .card {
-        padding: 20px; 
+        padding: 20px;
     }
+
     p {
 
-        font-size:20px;
+        font-size: 20px;
     }
 </style>

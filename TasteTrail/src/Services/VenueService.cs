@@ -26,7 +26,7 @@ public class VenueService : IVenueService
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await this._localStorageService.GetItemAsStringAsync("jwt");
+        var token = await this._localStorageService.GetItemAsStringAsync("AccessToken");
         var client = this._httpClientFactory.CreateClient("ExperincePolicy");
 
         if (!string.IsNullOrEmpty(token))
@@ -40,7 +40,7 @@ public class VenueService : IVenueService
         return client;
     }
 
-    public async Task<VenueDto?> GetFilteredVenuesAsync(FilterType type)
+    public async Task<VenueDto?> GetFilteredVenuesAsync(FilterType type = FilterType.NoFilter)
     {
         return await GetFilteredVenuesAsync(type, 1, 10, "");
     }
@@ -56,7 +56,7 @@ public class VenueService : IVenueService
 
         var filterRequest = new
         {
-            type = (int)type,
+            type = type != FilterType.NoFilter ? (int?)type - 1 : null,
             pageNumber = pageNumber,
             pageSize = pageSize,
             searchTerm = searchTerm,
@@ -127,11 +127,11 @@ public class VenueService : IVenueService
 
         var response = await client.PostAsync("/api/Venue/Create", formData);
 
-         if (!response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"Server responded with error: {responseContent}");
-        } 
+        }
 
         return response.IsSuccessStatusCode;
     }

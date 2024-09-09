@@ -9,19 +9,19 @@
 @inject IVenueService IVenueService
 
 @code {
-    
+    private string? userId { get; set; }
     private int currentPage = 1;
     private int totalPages = 0;
     private int itemsPerPage = 9;
     private VenueDto? venueDto { get; set; }
     private string searchQuery = string.Empty;
-    private FilterType selectedFilter = FilterType.OldestFirst;
+    private FilterType selectedFilter = FilterType.NoFilter;
     private bool isLoading = true;
 
     public static string SplitCamelCase(string input)
-{
-    return System.Text.RegularExpressions.Regex.Replace(input, "(\\B[A-Z])", " $1");
-}
+    {
+        return System.Text.RegularExpressions.Regex.Replace(input, "(\\B[A-Z])", " $1");
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -37,7 +37,7 @@
             var user = authState.User;
 
             var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
-
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
             if (!isAuthenticated)
             {
                 NavigationManager.NavigateTo("/");
@@ -136,6 +136,11 @@
     { 
         NavigationManager.NavigateTo("/Venue/Create", true); 
     }
+    private void CreateMenu(int id)
+    { 
+        NavigationManager.NavigateTo($"/Menu/Create/{id}", true); 
+    }
+    
     private void UpdateVenue(int id)
     {   
         NavigationManager.NavigateTo($"/Venue/Update/{id}", true); 
@@ -250,8 +255,7 @@ else
                                         <th>ContactNumber</th>
                                         <th>Email</th>
                                         <th>Average Price</th>
-                                        <th>Rating</th>
-                                        <th>User Id</th>
+                                        <th>Rating</th> 
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -261,12 +265,16 @@ else
  
                                         <tr>
                                             <td>
-                                            <button @onclick="() => CreateVenue()" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Create new Venue">
+                                                @if(@userId == @venue!.UserId)
+                                                {
+
+                                                <button @onclick="() => CreateMenu(venue.Id)" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Create new Venue">
                                                     <i class="fa-regular fa-square-plus"></i>
                                                 </button>
                                                 <button class="ml-4" @onclick="() => UpdateVenue(venue.Id)" > 
                                                     <i class="fa-solid fa-pen-to-square"></i>
                                                 </button>
+                                                }
                                             </td>
                                             <td @onclick="() => GoToDetails(venue.Id)">
                                                 <img src="@venue!.LogoUrlPath" alt="Venue Avatar" class="rounded-circle"
@@ -278,8 +286,7 @@ else
                                             <td @onclick="() => GoToDetails(venue.Id)">@venue!.ContactNumber</td>
                                             <td @onclick="() => GoToDetails(venue.Id)">@venue!.Email</td>
                                             <td @onclick="() => GoToDetails(venue.Id)">@venue!.AveragePrice</td>
-                                            <td @onclick="() => GoToDetails(venue.Id)">@venue!.Rating</td>
-                                            <td @onclick="() => GoToDetails(venue.Id)">@venue!.UserId</td>
+                                            <td @onclick="() => GoToDetails(venue.Id)">@venue!.Rating</td> 
                                             <td><button @onclick="() => DeleteVenue(venue.Id)" class="btn btn-github btn-sm"> Delete</button></td>
                                         </tr> 
                                     }
@@ -319,10 +326,10 @@ else
     </div>
 
 <style> 
-    th button{
+    th button, td button{
         margin: 10px;
     }
-    th button:hover {
+    th button:hover, td button:hover {
         transition: opacity 0.5s ease-out;
         opacity: 70%;
     }  

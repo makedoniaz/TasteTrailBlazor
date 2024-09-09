@@ -5,6 +5,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService localStorageService
+@inject LoginService LoginService
 
 @code {
     private int activeIndex = 0;
@@ -47,12 +48,9 @@
     private async Task LogoutAsync()
     {
         try
-        {
-            await localStorageService.RemoveItemAsync("jwt");
-            await localStorageService.RemoveItemAsync("refresh");
-
-            var authProvider = (JwtAuthenticationStateProvider)AuthenticationStateProvider;
-            await authProvider!.NotifyUserLogout();
+        { 
+            
+            await LoginService.LogoutAsync();
 
             // Redirect to the login page
             NavigationManager.NavigateTo("/Login", true);

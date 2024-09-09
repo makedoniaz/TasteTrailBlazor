@@ -15,7 +15,7 @@
     private FeedbackDto? feedbackDto { get; set; }
     private string searchQuery = string.Empty;
     private bool isLoading = true;
-    private FilterType selectedFilter = FilterType.MostLiked;
+    private FilterType selectedFilter = FilterType.NoFilter;
 
     public static string SplitCamelCase(string input)
 {
@@ -24,7 +24,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadFeedbacks();
+        await LoadFeedbacks(); 
     }
 
     private async Task LoadFeedbacks()
@@ -242,8 +242,8 @@ else
                                             <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Text</td>
                                             <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Rating</td>
                                             <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.CreationDate</td>
-                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.User!.UserName</td> 
-                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Venue!.Name</td>
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.Username</td> 
+                                            <td @onclick="() => GoToDetails(feedback.Id)">@feedback!.VenueId</td>
                                             <td><button @onclick="() => DeleteFeedback(feedback.Id)" class="btn btn-github btn-sm"> Delete</button></td>
                                         </tr>
                                     }

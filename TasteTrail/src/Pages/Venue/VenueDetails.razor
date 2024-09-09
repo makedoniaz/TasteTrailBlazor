@@ -6,21 +6,32 @@
 @inject ILocalStorageService localStorageService
 @inject IVenueService IVenueService
 @inject IMenuService IMenuService
+@inject IFeedbackService IFeedbackService
 
 <PageTitle>Venue Details</PageTitle>
 
 @code {
-
+    Map.LoadParameters parameters = new Map.LoadParameters()
+        {
+            location = new Map.Location()
+            {
+                longitude = 26.097133,
+                latitude = 44.446165
+            },
+            zoom_level = 12
+        };
     int pageNumber = 1;
     int pageSize = 10;
     public class VenueViewModel
     {
         public Venue? Venue { get; set; }
         public MenuDto? Menus { get; set; } = new MenuDto();
-        //public List<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
+        public FeedbackDto? Feedbacks { get; set; } = new FeedbackDto();
         public double Latitude { get; set; } = 40.3820624;
         public double Longitude { get; set; } = 49.877007;
     }
+
+    private FilterType selectedFilter = FilterType.MostLiked;
 
     [Parameter]
     public int Id { get; set; }
@@ -43,6 +54,8 @@
             Model.Venue = await IVenueService.GetVenueByIdAsync(Id);
 
             Model.Menus = await IMenuService.GetFilteredMenusAsync(Id, pageNumber, pageSize);
+
+            Model.Feedbacks = await IFeedbackService.GetFilteredFeedbacksAsync(Id, selectedFilter, pageNumber, pageSize);
 
         }
         catch (Exception ex)
@@ -106,15 +119,15 @@
                         </div>
                         <hr />
                         @* @foreach (var menuItems in menu.MenuItems)
-                        {
-                            <section>
-                                <h2>Header</h2>
-                                <article class="item">
-                                    <p class="flavor">@menuItems.Name</p>
-                                    <p class="price">150</p>
-                                </article>
-                            </section>
-                        } *@
+                {
+                <section>
+                <h2>Header</h2>
+                <article class="item">
+                <p class="flavor">@menuItems.Name</p>
+                <p class="price">150</p>
+                </article>
+                </section>
+                } *@
                     </a>
                 </div>
             }
@@ -124,43 +137,87 @@
     <!-- Location Section -->
     <div class="mt-5">
         <h2>Location</h2>
-        <div id="map" style="height: 300px;"></div>
-        <p class="mt-3"><strong>Latitude: </strong><span id="lat">@Model.Latitude</span></p>
-        <p class="mt-3"><strong>Longitude: </strong><span id="lng">@Model.Longitude</span></p>
+        <Map width="600px" height="600px" Parameters="@parameters"></Map>
+    </div>
+
+    <!-- Feedback Section -->
+    <div class="mt-5">
+        <h2>Reviews</h2>
+        <div class="list-group" style="position: relative;">
+            @foreach (var feedback in Model!.Feedbacks!.Entities)
+            {
+                <div class="list-group-item d-flex align-items-start">
+                    <img src="/images/user.png" class="rounded-circle me-3" alt="Alice's logo" style="width: 50px;">
+                    <div>
+                        <h5 class="mb-1">@feedback.Username</h5>
+                        <div class="rating" data-rating="feedback.Rating">
+                            <span class="text-warning">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </span>
+                            <span class="badge bg-secondary ms-2">@feedback.Rating</span>
+                        </div>
+                        <p class="mb-1">@feedback.Text
+                        </p>
+                        <small class="text-muted">Posted on feedback.CreationDate</small>
+
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary edit-feedback">Edit <i
+                                    class="fas fa-pencil-alt"></i></button>
+                        </div>
+
+                    </div>
+                </div>
+            }
+            <button type="button" class="btn btn-primary btn-lg rounded-circle" id="addFeedbackBtn"
+                style="position: absolute; bottom: -10px; right: -15px;"><i class="fas fa-plus"></i> </button>
+        </div>
+
+    </div>
+
+    <div class="mt-5" id="commentFormSection" style="display: none;">
+        <h2>Add/Edit Comment</h2>
+        <form id="commentForm">
+            <div class="mb-3">
+                <label for="commentName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="commentName" required>
+            </div>
+            <div class="mb-3">
+                <label for="commentRating" class="form-label">Rating</label>
+                <select class="form-select" id="commentRating" required>
+                    <option value="">Select Rating</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="commentMessage" class="form-label">Comment</label>
+                <textarea class="form-control" id="commentMessage" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Comment</button>
+        </form>
     </div>
 </div>
 
+<style>
+    #map {
+        height: 100vh;
+    }
+
+    .leaflet-popup-content-wrapper {
+        width: 100%;
+    }
+</style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script>
-    var map = L.map('map').setView([@Model.Latitude, @Model.Longitude], 15);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    var marker = L.marker([@Model.Latitude, @Model.Longitude], { draggable: true }).addTo(map);
-
-    function updateCoordinates(lat, lng) {
-        document.getElementById('lat').innerText = lat.toFixed(6);
-        document.getElementById('lng').innerText = lng.toFixed(6);
-    }
-
-    map.on('click', function (e) {
-        var lat = e.latlng.lat;
-        var lng = e.latlng.lng;
-        marker.setLatLng(e.latlng);
-        updateCoordinates(lat, lng);
-    });
-
-    marker.on('dragend', function (e) {
-        var lat = marker.getLatLng().lat;
-        var lng = marker.getLatLng().lng;
-        updateCoordinates(lat, lng);
-    });
-</script>
 
 <style>
     .container {

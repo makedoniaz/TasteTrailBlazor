@@ -24,7 +24,7 @@ public class AdminPanelService : IAdminPanelService
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await _localStorageService.GetItemAsStringAsync("jwt");
+        var token = await _localStorageService.GetItemAsStringAsync("AccessToken");
         var client = _httpClientFactory.CreateClient("AuthPolicy");
 
         if (!string.IsNullOrEmpty(token))
@@ -38,13 +38,29 @@ public class AdminPanelService : IAdminPanelService
         return client;
     }
 
-    public async Task<int> GetUsersCountAsync()
+    public async Task<int> GetUsersCountAsync(
+        FilterType type = FilterType.NoFilter,
+        int pageNumber = 1,
+        int pageSize = 10
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
-        var result = await client.GetFromJsonAsync<UsersCountResponse>(
-            "/api/AdminPanel/User/Count"
-        );
-        return result!.UsersCount;
+
+        var filterRequest = new
+        {
+            type = type != FilterType.NoFilter ? (int?)type - 1 : null,
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+        };
+
+        var response = await client.PostAsJsonAsync("/api/AdminPanel/User/Count", filterRequest);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return (await response.Content.ReadFromJsonAsync<UsersCountResponse>())!.UsersCount;
+        }
+
+        return 0;
     }
 
     public async Task<bool> AssignRoleAsync(string userId, UserRoles role)
@@ -84,7 +100,7 @@ public class AdminPanelService : IAdminPanelService
     public async Task<UserDto?> GetUserByIdAsync(string userId)
     {
         var client = await CreateAuthenticatedClientAsync();
-        return await client.GetFromJsonAsync<UserDto>($"/api/AdminPanel/User/{userId}");
+        return await client.GetFromJsonAsync<UserDto>($"/api/AdminPanel/UserInfo/{userId}");
     }
 
     public async Task<UserListDto?> GetAllUsersAsync(
@@ -95,19 +111,16 @@ public class AdminPanelService : IAdminPanelService
     )
     {
         var client = await CreateAuthenticatedClientAsync();
-        HttpResponseMessage response;
 
-        if (searchTerm == "")
+        var filterRequest = new
         {
-            response = await client.GetAsync(
-                $"/api/AdminPanel/User/Search?Type={(int)type}&PageNumber={pageNumber}&PageSize={pageSize}" 
-            );
-        }
-        else{
-            response = await client.GetAsync(
-                $"/api/AdminPanel/User/Search?Type={(int)type}&PageNumber={pageNumber}&PageSize={pageSize}&SearchTerm={searchTerm}" 
-            );
-        }
+            type = type != FilterType.NoFilter ? (int?)type - 1 : null,
+            pageNumber = pageNumber,
+            pageSize = pageSize,
+            searchTerm = searchTerm,
+        };
+
+        var response = await client.PostAsJsonAsync("/api/AdminPanel/UserFilter", filterRequest);
 
         if (response.IsSuccessStatusCode)
         {

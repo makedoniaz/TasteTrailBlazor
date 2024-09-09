@@ -24,7 +24,7 @@ public class MenuService : IMenuService
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
-        var token = await _localStorageService.GetItemAsStringAsync("jwt");
+        var token = await _localStorageService.GetItemAsStringAsync("AccessToken");
         var client = _httpClientFactory.CreateClient("ExperincePolicy");
 
         if (!string.IsNullOrEmpty(token))
@@ -132,10 +132,22 @@ public class MenuService : IMenuService
         }
     }
 
-    public async Task<bool> CreateMenuAsync(MenuCreateDto menuDto)
+    public async Task<bool> CreateMenuAsync(MenuCreateDto menuDto, StreamContent imageStream, string imageFileName)
     {
         var client = await CreateAuthenticatedClientAsync();
-        var response = await client.PostAsJsonAsync("/api/Menu/Create", menuDto);
+        using var formData = new MultipartFormDataContent();
+
+        formData.Add(new StringContent(menuDto.Name ?? string.Empty), nameof(menuDto.Name));
+        formData.Add(
+            new StringContent(menuDto.Description ?? string.Empty),
+            nameof(menuDto.Description)
+        ); 
+        if (imageStream != null && !string.IsNullOrEmpty(imageFileName))
+        {
+            formData.Add(imageStream, "image", imageFileName);
+        }
+
+        var response = await client.PostAsJsonAsync("/api/Menu/Create", formData);
         if (!response.IsSuccessStatusCode)
         {
             Console.WriteLine(

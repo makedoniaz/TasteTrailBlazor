@@ -1,18 +1,37 @@
-﻿@page "/Menu/Create"
+﻿@page "/Menu/Create/{Id:int?}"
 @attribute [Authorize(Policy = "AdminOnly")]
 @layout DashBoardLayout
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IVenueService IVenueService
 @inject IMenuService IMenuService
 
 
 <PageTitle>Create Menu</PageTitle>
 
-@code { 
-    private MenuCreateDto menu = new MenuCreateDto(); 
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    public string? userId { get; set; }
+    public Venue? currentVenue { get; set; }
 
+    private MenuCreateDto menuCreateDto = new MenuCreateDto();
+    private StreamContent? _logoStream;
+    private string? _logoFileName;
+
+
+    private void OnFileSelected(ChangeEventArgs e)
+    {
+        var files = e.Value as IReadOnlyList<IBrowserFile>;
+        if (files != null && files.Count > 0)
+        {
+            var file = files[0];
+            _logoFileName = file.Name;
+            _logoStream = new StreamContent(file.OpenReadStream());
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         try
@@ -25,12 +44,21 @@
             {
                 NavigationManager.NavigateTo("/");
             }
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
-            @* venues = await IMenuService.GetAllVenuesAsync(); *@
+            currentVenue = await IVenueService.GetVenueByIdAsync(id: Id);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Exception message: {ex.Message}");
+        }
+        finally
+        {
+
+            if (currentVenue!.UserId != userId)
+            {
+                NavigationManager.NavigateTo("/DashboardVenues");
+            }
         }
     }
     private async Task CreateMenuAsync()
@@ -50,8 +78,9 @@
 
             try
             {
+                menuCreateDto.VenueId = Id;
 
-                var result = await IMenuService.CreateMenuAsync(menu);
+                var result = await IMenuService.CreateMenuAsync(menuCreateDto, _logoStream!, _logoFileName!);
                 if (result)
                 {
                     NavigationManager.NavigateTo("/DashboardMenus");
@@ -71,54 +100,39 @@
     <div class="row mb-3">
         <div class="container ">
 
-            <EditForm Model="menu" OnValidSubmit="CreateMenuAsync" class="createForm" menuItem>
+            <EditForm Model="menuCreateDto" OnValidSubmit="CreateMenuAsync" class="createForm" menuItem>
                 <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Create new Menu</h1>
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-
-                @* <div class="custom-file">
-                <label class="input-file">
-                <input type="file" class="input-file" name="file"
-                @onchange="@(async e => await OnFileSelected(e))">
-                <span class="input-file-btn">Выберите файл</span>
-                <span class="input-file-text">Максимум 10мб</span>
-                </label>
-                </div> *@
+ 
+                 <div class="custom-file">
+                    <label class="input-file">
+                        <input type="file" class="input-file" name="file"
+                            @onchange="@(async e => OnFileSelected(e))">
+                        <span class="input-file-btn">Выберите файл</span>
+                        <span class="input-file-text">Максимум 10мб</span>
+                    </label> 
+                </div>
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>
                     <InputText id="name" class="form-control custom-file-input" placeholder="Input Menu name..."
-                        @bind-Value="menu.Name" />
-                    <ValidationMessage For="@(() => menu.Name)" />
+                        @bind-Value="menuCreateDto.Name" />
+                    <ValidationMessage For="@(() => menuCreateDto.Name)" />
                 </div>
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="description">Description</label>
                     <InputTextArea id="description" class="form-control custom-file-input"
-                        placeholder="Input Menu Description..." @bind-Value="menu.Description" />
-                    <ValidationMessage For="@(() => menu.Description)" />
+                        placeholder="Input Menu Description..." @bind-Value="menuCreateDto.Description" />
+                    <ValidationMessage For="@(() => menuCreateDto.Description)" />
                 </div>
 
-                @* <div class="custom-file">
-                    <label class="custom-file-label" for="VenueId">Venue</label>
-                    <select id="VenueId" class="form-control custom-file-input" @bind="menu.VenueId">
-                        <option value="">Select Venue</option>
-                        @foreach (var venue in venues)
-                        {
-                            <option value="@venue.Id">@venue.Name</option>
-                        }
-                    </select>
-                    <ValidationMessage For="@(() => menu.VenueId)" />
-                </div> *@
-
-                @* <div class="custom-file">
-                <label class="custom-file-label" for="contactNumber">Contact Number</label>
-                <InputText id="contactNumber" class="form-control custom-file-input"
-                placeholder="Input Menu ContactNumber..." @bind-Value="menu.ContactNumber" />
-                <ValidationMessage For="@(() => menu.ContactNumber)" />
-                </div> *@
-
-
+                <div class="custom-file">
+                    <label class="custom-file-label" for="venue">Selected Venue Name</label>
+                    <InputTextArea id="venue" class="form-control custom-file-input" placeholder="Your Input"
+                        @bind-Value="currentVenue!.Name" disabled />
+                </div>
 
                 <button type="submit" <span>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">

@@ -5,6 +5,7 @@
 @inject IJSRuntime jsRuntime
 @inject ILocalStorageService localStorageService 
 @inject AuthenticationStateProvider authenticationStateProvider
+@inject LoginService LoginService
 
 @layout CosmosLayout
 
@@ -22,7 +23,7 @@
         {
             if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
             {
-                await jwtProvider.LoginAsync(loginDto);
+                await LoginService.LoginAsync(loginDto);
             }
             else
             {

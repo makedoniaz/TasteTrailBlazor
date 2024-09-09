@@ -16,6 +16,7 @@ var authBaseUrl = builder.Configuration["AuthBaseUrl"] ?? "http://localhost:5172
 var experinceBaseUrl = builder.Configuration["ExperinceBaseUrl"] ?? "http://localhost:5188/";
 
 // Registering services
+builder.Services.AddTransient<LoginService>();
 builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>(); 
 builder.Services.AddAuthorizationCore(options =>  {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
