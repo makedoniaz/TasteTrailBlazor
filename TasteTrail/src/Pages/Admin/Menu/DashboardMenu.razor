@@ -9,12 +9,12 @@
 @inject IMenuService IMenuService
 
 @code { 
-    private string? userId { get; set; }
-    private int currentPage = 1;
-    private int totalPages = 0;
-    private int itemsPerPage = 9;
     private MenuDto? menuDto { get; set; }
+    private string? userId { get; set; }
     private string searchQuery = string.Empty;
+    private int currentPage = 1;
+    private int itemsPerPage = 9;
+    private int totalPages = 0;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -115,12 +115,7 @@
             await Refresh();
         }
     }
-
-    private void CreateMenu()
-    { 
-        NavigationManager.NavigateTo("/Menu/Create", true); 
-    }
-    private void UpdateMenu(int id)
+     private void UpdateMenu(int id)
     {   
         NavigationManager.NavigateTo($"/Menu/Update/{id}", true); 
     }
@@ -147,9 +142,9 @@
                     <button @onclick="Refresh"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
         </div>
-@if (isLoading)
-{
-    <div class="content-wrapper center fade-in">
+    @if (isLoading)
+    {
+        <div class="content-wrapper center fade-in">
         <svg class="pl" viewBox="0 0 128 128" width="128px" height="128px" role="img"
             aria-label="A pan being used to flip a blob resembling bacon as it splashes drops of grease in and out">
             <clipPath id="pan-clip">
@@ -198,10 +193,10 @@
                     height="7" />
             </g>
         </svg>
-    </div>
-}
-else
-{
+        </div>
+    }
+    else
+    {
         <div class="row">
             <div class="col-lg-12 grid-margin stretch-card">
                 <div class="card">
@@ -210,10 +205,7 @@ else
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>  
-                                            <button  @onclick="() => CreateMenu()">
-                                                <i class="fa-solid fa-plus"></i>
-                                            </button> 
+                                        <th>   
                                             <button  @onclick="() => Refresh()">
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>
@@ -279,9 +271,9 @@ else
                 <span>-</span>
             </div>
         </div>
-}
+    }
     </div>
-
+    
 <style> 
     th button{
         margin: 10px;

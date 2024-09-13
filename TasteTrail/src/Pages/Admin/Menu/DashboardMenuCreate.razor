@@ -14,13 +14,11 @@
 @code {
     [Parameter]
     public int Id { get; set; }
-    public string? userId { get; set; }
     public Venue? currentVenue { get; set; }
-
     private MenuCreateDto menuCreateDto = new MenuCreateDto();
     private StreamContent? _logoStream;
     private string? _logoFileName;
-
+    public string? userId { get; set; }
 
     private void OnFileSelected(ChangeEventArgs e)
     {
@@ -47,19 +45,16 @@
             userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             currentVenue = await IVenueService.GetVenueByIdAsync(id: Id);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception message: {ex.Message}");
-        }
-        finally
-        {
 
-            if (currentVenue!.UserId != userId)
+             if (currentVenue == null || currentVenue!.UserId != userId)
             {
                 NavigationManager.NavigateTo("/DashboardVenues");
             }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception message: {ex.Message}");
+        } 
     }
     private async Task CreateMenuAsync()
     {

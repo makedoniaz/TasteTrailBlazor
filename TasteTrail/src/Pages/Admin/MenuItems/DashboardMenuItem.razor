@@ -119,11 +119,7 @@
             await Refresh();
         }
     }
-
-    private void CreateMenuItem()
-    { 
-        NavigationManager.NavigateTo("/MenuItem/Create", true); 
-    }
+ 
     private void UpdateMenuItem(int id)
     {   
         NavigationManager.NavigateTo($"/MenuItem/Update/{id}", true); 
@@ -231,10 +227,7 @@ else
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>  
-                                            <button  @onclick="() => CreateMenuItem()">
-                                                <i class="fa-solid fa-plus"></i>
-                                            </button> 
+                                        <th>   
                                             <button  @onclick="() => Refresh()">
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>

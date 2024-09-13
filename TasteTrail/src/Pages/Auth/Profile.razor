@@ -9,7 +9,7 @@
 @code {
     private UserProfileDto userProfile = new();
     private string defaultAvatarUrl = "/images/default-avatar.png"; // Change as needed
-
+    private bool selectedDash = true;
     public class UserProfileDto
     {
         public string UserName { get; set; } = string.Empty;
@@ -52,45 +52,372 @@
             Console.WriteLine($"Error loading dashboard data: {ex.Message}");
         }
     }
-
-    private async Task OnFileChange(ChangeEventArgs e)
-    {
-        var files = (e.Value as IEnumerable<IBrowserFile>)?.ToList();
-        if (files != null && files.Count > 0)
-        {
-            var file = files[0];
-            var fileContent = await file.RequestImageFileAsync("image/jpeg", 1000, 1000);
-            var stream = fileContent.OpenReadStream();
-
-            var httpClient = httpClientFactory.CreateClient("BlazorPolicy");
-            var formData = new MultipartFormDataContent();
-            formData.Add(new StreamContent(stream), "file", file.Name);
-
-            var response = await httpClient.PostAsync("/api/UserProfile/UploadAvatar", formData);
-
-            if (response.IsSuccessStatusCode)
-            {
-                userProfile.AvatarPath = await response.Content.ReadAsStringAsync();
-                defaultAvatarUrl = userProfile.AvatarPath;
-            }
-        }
-    }
+ 
 }
 
 <PageTitle>Profile</PageTitle>
 
-<div class="card-body row">
+<!-- <div class="card-body row">
     <div class="col-md-2">
         <div class="avatar-container text-center">
-            <img id="avatarPreview" src="@defaultAvatarUrl" class="img-fluid rounded-circle avatar-image"
+            <img id="avatarPreview" src="@@defaultAvatarUrl" class="img-fluid rounded-circle avatar-image"
                 alt="User Avatar">
             <input type="file" id="avatarInput" name="avatarInput" accept="image/*" style="display: none;"
-                @onchange="OnFileChange">
+                @@onchange="OnFileChange">
         </div>
     </div>
     <div class="col-md-3">
-        <h5 class="card-title mb-3">@userProfile.UserName</h5>
-        <p class="card-text"><strong>Role:</strong> @(userProfile.IsAdmin ? "Admin" : "User")</p>
-        <p class="card-text"><strong>Email:</strong> @userProfile.Email</p>
+        <h5 class="card-title mb-3">@@userProfile.UserName</h5>
+        <p class="card-text"><strong>Role:</strong> @@(userProfile.IsAdmin ? "Admin" : "User")</p>
+        <p class="card-text"><strong>Email:</strong> @@userProfile.Email</p>
     </div>
-</div>
+</div> -->
+
+
+    <section class="tg-may-account-wrapp tg">
+        <div class="inner">
+            <div class="tg-account">
+
+                <!-- Accont banner start -->
+                <div class="account-banner">
+                    <div class="inner-banner">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-8 detail">
+                                    <div class="inner">
+                                        <h1 class="page-title">My Account</h1>
+                                        <h3 class="user-name">Hello @userProfile.UserName!</h3>
+                                    </div>
+                                </div> 
+                                <div class="col-md-4 profile">
+                                    <div class="profile">
+                                        <span class="image">
+                                        <img src="@userProfile.AvatarPath" alt="Profile photo">
+                                    </span>
+                                    </div>
+                                </div> 
+                            </div> 
+                            <div class="nav-area">
+                                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link @(selectedDash ? "active" : null )" id="dashboard-link" data-toggle="tab" @onclick="() => {selectedDash = !selectedDash;}" role="tab" aria-controls="dashboard" aria-selected="true"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                                    </li>  
+                                    <li class="nav-item">
+                                        <a class="nav-link @(selectedDash ? null : "active")"  id="account-detail" data-toggle="tab"  @onclick="() => {selectedDash = !selectedDash;}" role="tab" aria-controls="account-details" aria-selected="false"><i class="fas fa-user-alt"></i> <span>Account Details</span></a>
+                                    </li> 
+                                </ul>
+                            </div> 
+                        </div>
+                    </div>
+                </div> 
+                <div class="tabs tg-tabs-content-wrapp">
+                    <div class="inner">
+                        <div class="container">
+                            <div class="inner">
+                                <div class="tab-content" id="myTabContent">
+                                    @if(selectedDash)
+                                    {
+                                    <div class="tab-pane fade show active" id="dashboard"  aria-labelledby="dashboard-link">
+                                        <div class="my-account-dashboard">
+                                            <div class="inner">
+                                                <div class="row">
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card" area-toggle="my-order">
+                                                            <div class="card-body">
+                                                                <div class="text-center">
+                                                                    <a><img src="https://res.cloudinary.com/templategalaxy/image/upload/v1631257421/codepen-my-account/images/orders_n2aopq.png"></a>
+                                                                </div>
+                                                                <h2>Your Orders</h2>
+                                                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card" area-toggle="my-address">
+                                                            <div class="card-body">
+                                                                <div class="text-center">
+                                                                    <a><img src="https://res.cloudinary.com/templategalaxy/image/upload/v1631257421/codepen-my-account/images/notebook_psrhv5.png"></a>
+                                                                </div>
+                                                                <h2>Your Addresses</h2>
+                                                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card" area-toggle="account-detail">
+                                                            <div class="card-body">
+                                                                <div class="text-center">
+                                                                    <a><img src="https://res.cloudinary.com/templategalaxy/image/upload/v1631257421/codepen-my-account/images/login_aq9v9z.png"></a>
+                                                                </div>
+                                                                <h2>Account Details</h2>
+                                                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>  
+                                    }
+                                    else{ 
+                                    <div class="tab-pane fade show active" id="account-details "  aria-labelledby="account-detail">
+                                        <div class="account-detail-form">
+                                            <div class="inner">
+                                                <form class="tg-form">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-md-6">
+                                                            <label for="inputfname">Name</label>
+                                                            <input type="text" class="form-control" placeholder="@userProfile.UserName">
+                                                        </div> 
+
+                                                        <div class="form-group col-md-12">
+                                                            <label for="inputEmail4">Email</label>
+                                                            <input type="email" class="form-control"   placeholder="@userProfile.Email">
+                                                        </div>
+ 
+                                                    </div>
+                                                    <button type="submit" class="btn btn-primary">Update</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    }
+                                     
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <style>
+    .tg {
+    --bg-primary: #9b0435;
+    --text-primary: #770a2e;
+}
+
+.tg-account .account-banner {
+    background: var(--bg-primary);
+    width: 100%;
+    float: left;
+    padding: 100px 0 0;
+}
+
+.tg-account .account-banner .inner-banner .detail * {
+    color: #fff;
+}
+
+.tg-account .account-banner .inner-banner .profile {
+    text-align: center;
+}
+
+.tg-account .account-banner .inner-banner .profile span.image img {
+    width: 130px;
+    border-radius: 50%;
+    box-shadow: 0px 0px 15px -10px #000;
+}
+
+.tg-account .account-banner .inner-banner .detail h3.user-name {
+    font-size: 20px;
+    margin-top: 20px;
+}
+
+.tg-account .account-banner .inner-banner .nav-area {
+    width: 100%;
+    float: left;
+    margin-top: 45px;
+}
+
+.tg-account .account-banner .inner-banner .nav-area ul li a {
+    background: rgba(255, 255, 255, .4);
+    color: #fff;
+    font-weight: 500;
+    border-radius: 0px;
+    font-size: 16px;
+    border: none;
+    padding: 10px 28px;
+    min-width: 120px;
+    display: block;
+    transition: .4s;
+    text-align: center;
+}
+
+.tg-account .account-banner .inner-banner .nav-area ul li {
+    margin-right: 7px;
+}
+
+.tg-account .account-banner .inner-banner .nav-area ul li a.active,
+.tg-account .account-banner .inner-banner .nav-area ul li a:hover {
+    color: var(--text-primary);
+    background: #fff;
+}
+
+.tg-tabs-content-wrapp {
+    width: 100%;
+    float: left;
+    padding: 30px 0;
+}
+
+div#my-orders-table_length {
+    width: fit-content;
+    float: left;
+}
+
+div#my-orders-table_filter {
+    width: fit-content;
+    float: right;
+}
+
+div#my-orders-table_length select,
+div#my-orders-table_filter input {
+    border: 1px solid #207ba1;
+    padding: 5px 15px;
+}
+
+div#my-orders-table_length,
+div#my-orders-table_filter {
+    margin-bottom: 22px;
+}
+
+.tg-tabs-content-wrapp .tg-form {
+    width: 100%;
+    float: left;
+    background: #f7f7f7;
+    padding: 30px 30px 60px;
+    border: 1px solid #eaeaea;
+}
+
+.tg-tabs-content-wrapp .tg-form button {
+    background: var(--bg-primary);
+    border: none;
+    padding: 10px 32px;
+    cursor: pointer;
+    margin: 13px 0 0;
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card img {
+    max-width: 80px;
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card {
+    text-align: center;
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card h2 {
+    font-size: 20px;
+    margin-top: 14px;
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card p {
+    font-size: 15px;
+}
+
+div#my-orders-table_info {
+    float: left;
+}
+
+div#my-orders-table_paginate {
+    float: right;
+}
+
+.page-item.active .page-link {
+    background-color: lightgrey !important;
+    border: 1px solid black;
+}
+
+.page-link {
+    color: black !important;
+}
+
+div#my-orders-table_paginate a {
+    background: #e6e6e6;
+    margin: 0 2px;
+    padding: 3px 11px;
+    display: inline-block;
+    cursor: pointer;
+    text-decoration: none;
+    color: #000;
+}
+
+div#my-orders-table_paginate {
+    margin-top: 8px;
+}
+
+div#my-orders-table_paginate span a.current {
+    color: #fff !important;
+    background: var(--primary);
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card {
+    cursor: pointer;
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card:hover,
+.tg-tabs-content-wrapp .my-account-dashboard .card.active {
+    background: var(--text-primary);
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card:hover *,
+.tg-tabs-content-wrapp .my-account-dashboard .card.active * {
+    color: #fff;
+}
+
+.tg-tabs-content-wrapp .my-account-dashboard .card {
+    transition: .4s;
+    border-radius: 0px;
+    box-shadow: 0px 2px 7px -5px;
+}
+
+table#my-orders-table a.view-order {
+    background: var(--text-primary);
+    cursor: pointer;
+    text-decoration: none;
+    color: #fff;
+    padding: 4px 11px;
+    border-radius: 3px;
+}
+
+@@media(min-width:768px) {
+    table#my-orders-table td.action,
+    table#my-orders-table th.action {
+        text-align: center;
+    }
+}
+
+@@media(max-width:768px) {
+    .tg-account .account-banner .inner-banner .nav-area ul li a {
+        min-width: auto !important;
+        padding: 8px 15px;
+    }
+}
+
+@@media(max-width:600px) {
+    .tg-account .account-banner .inner-banner .nav-area ul li a span {
+        display: none;
+    }
+    .tg-account .account-banner .inner-banner .nav-area ul li a {
+        min-width: auto;
+        padding: 8px 20px;
+    }
+    .tg-account .account-banner .inner-banner .nav-area ul {
+        text-align: center;
+        margin: 0 auto;
+        width: fit-content;
+    }
+    .tg-account .detail {
+        text-align: center;
+    }
+    div#my-orders-table_length select,
+    div#my-orders-table_filter input {
+        max-width: 120px;
+        font-size: 14px;
+    }
+    div#my-orders-table_length label,
+    div#my-orders-table_filter label {
+        font-size: 0px;
+    }
+}
+</style>

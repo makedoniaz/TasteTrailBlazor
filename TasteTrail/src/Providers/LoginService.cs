@@ -48,8 +48,11 @@ public class LoginService
         {
             var accessToken = await response.Content.ReadFromJsonAsync<AccessToken>();
 
-            await this._localStorage.SetItemAsStringAsync(AccessToken,  accessToken!.Jwt!);
-            await this._localStorage.SetItemAsStringAsync(RefreshToken, accessToken!.Refresh!.ToString());
+            await this._localStorage.SetItemAsStringAsync(AccessToken, accessToken!.Jwt!);
+            await this._localStorage.SetItemAsStringAsync(
+                RefreshToken,
+                accessToken!.Refresh!.ToString()
+            );
 
             this._navigation.NavigateTo("/");
             return true;
@@ -88,7 +91,7 @@ public class LoginService
         string refreshToken;
         try
         {
-            accessToken  =  await this._localStorage.GetItemAsStringAsync(AccessToken);
+            accessToken = await this._localStorage.GetItemAsStringAsync(AccessToken);
             refreshToken = await this._localStorage.GetItemAsStringAsync(RefreshToken);
         }
         catch
@@ -96,7 +99,6 @@ public class LoginService
             await LogoutAsync();
             return emptyResult;
         }
-        
 
         if (string.IsNullOrEmpty(accessToken))
             return emptyResult;
@@ -169,13 +171,16 @@ public class LoginService
             "Bearer",
             token
         );
-        var response = await httpClient.PatchAsJsonAsync(
-            "/api/Authentication/Logout",
-            refreshToken
-        );
+        try
+        {
+            var response = await httpClient.PatchAsJsonAsync(
+                "/api/Authentication/Logout",
+                refreshToken
+            );
+        }
+        catch { }
 
-        await RemoveAuthDataFromStorageAsync();
-        this._navigation.NavigateTo("/Login");
+        await RemoveAuthDataFromStorageAsync(); 
     }
 
     private async Task RemoveAuthDataFromStorageAsync()

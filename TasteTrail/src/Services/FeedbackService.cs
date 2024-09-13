@@ -133,7 +133,7 @@ public class FeedbackService : IFeedbackService
         }
     }
 
-    public async Task<bool> CreateFeedbackAsync(FeedbackDto feedbackDto)
+    public async Task<bool> CreateFeedbackAsync(FeedbackCreateDto feedbackDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PostAsJsonAsync("/api/Feedback/Create", feedbackDto);
@@ -146,7 +146,7 @@ public class FeedbackService : IFeedbackService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> UpdateFeedbackAsync(FeedbackDto feedbackDto)
+    public async Task<bool> UpdateFeedbackAsync(FeedbackCreateDto feedbackDto)
     {
         var client = await CreateAuthenticatedClientAsync();
         var response = await client.PutAsJsonAsync("/api/Feedback/Update", feedbackDto);
