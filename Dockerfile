@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /build
 COPY . .
-RUN dotnet publish -c Release -o /build/dist
+RUN dotnet publish TasteTrailBlazor/src/TasteTrailBlazor.csproj -c Release -o /build/dist
 
 # Добавляем команду для проверки файлов после публикации
 RUN ls -l /build/dist
