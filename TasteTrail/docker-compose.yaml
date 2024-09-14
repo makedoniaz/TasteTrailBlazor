@@ -1,0 +1,11 @@
+services:
+  blazor-app:
+    image: blazor-app:latest
+    container_name: blazor-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
