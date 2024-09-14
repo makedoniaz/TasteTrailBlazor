@@ -9,7 +9,7 @@ public interface IMenuService
     Task<MenuDto> GetFilteredMenusAsync(int venueId, int pageNumber = 1, int pageSize = 10, string searchTerm = "");
     Task<Menu?> GetMenuByIdAsync(int id);
     Task<List<Menu>?> GetMenusFromToAsync(int from, int to, int venueId);
-    Task<bool> CreateMenuAsync(MenuCreateDto menuDto, StreamContent imageStream, string imageFileName);
+    Task<bool> CreateMenuAsync(MenuCreateDto menuDto, Stream imageStream, string logoFileName);
     Task<bool> UpdateMenuAsync(MenuDto menuDto);
     Task<bool> DeleteMenuAsync(int id);
 }

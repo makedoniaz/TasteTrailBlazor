@@ -30,16 +30,7 @@ public class Venue
     public DateTime? CreationDate { get; set; }
     public string? UserId { get; set; }
 }
-
-public class VenuePhoto
-{
-    public int Id { get; set; }
-
-    public int VenueId { get; set; }
-
-    public string? PhotoUrlPath { get; set; }
-}
-
+ 
 public class VenueCreateDto
 {
     public string? Name { get; set; }

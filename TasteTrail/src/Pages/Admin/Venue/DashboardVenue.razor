@@ -37,12 +37,12 @@
             var user = authState.User;
 
             var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
-            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
             if (!isAuthenticated)
             {
                 NavigationManager.NavigateTo("/");
                 return;
             }
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             isLoading = true;
             try
@@ -262,12 +262,10 @@ else
                                 <tbody>
                                     @foreach (var venue in venueDto!.Entities!)
                                     {
- 
                                         <tr>
                                             <td>
                                                 @if(@userId == @venue!.UserId)
                                                 {
-
                                                 <button @onclick="() => CreateMenu(venue.Id)" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Create new Venue">
                                                     <i class="fa-regular fa-square-plus"></i>
                                                 </button>

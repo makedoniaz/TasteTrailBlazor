@@ -1,0 +1,135 @@
+﻿@* @page "/map"
+@inject IJSRuntime JS
+
+@page "/map"
+@inject IJSRuntime JS
+
+<div id="map" style="height: 500px;"></div>
+
+<h3>Выбранный адрес: @selectedAddress</h3>
+<h3>Координаты: @latLng</h3>
+
+<input type="text" @bind="searchQuery" placeholder="Введите адрес или координаты" />
+<button @onclick="SearchLocation">Найти</button>
+
+@code {
+    private string selectedAddress = "Нет данных";
+    private string latLng = "Нет данных";
+    private string searchQuery = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        
+        try
+        {
+
+
+        
+        if (firstRender)
+        {
+            // Инициализация карты при первом рендере
+            await JS.InvokeVoidAsync("initializeMap", DotNetObjectReference.Create(this));
+                        StateHasChanged();
+
+        }
+
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message); // Лог для отладки
+        }
+    }
+
+[JSInvokable("UpdateLocation1")]
+    public void UpdateLocation(string address, double  latitude, double  longitude)
+    {
+
+        try
+        {
+            Console.WriteLine("text"); // Лог для отладки
+
+
+        // Обновление выбранного адреса и координат
+        selectedAddress = address;
+        latLng = $"{latitude}, {longitude}";
+
+        Console.WriteLine($"Address: {address}, Lat: {latitude}, Lng: {longitude}"); // Лог для отладки
+
+        // Перерисовка компонента с обновленными данными
+        StateHasChanged();
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message); // Лог для отладки
+        }
+    }
+
+    private async Task SearchLocation()
+    {
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            // Логирование запроса
+            Console.WriteLine($"Search query: {searchQuery}");
+
+            // Вызов JavaScript функции для поиска адреса
+            await JS.InvokeVoidAsync("searchAddress", searchQuery);
+        }
+    }
+}
+
+
+<style>
+    /* Устанавливаем высоту и размеры карты */
+#map {
+    height: 500px; /* Высота карты */
+    width: 100%;   /* Карта займет всю ширину родительского контейнера */
+    border: 2px solid #ddd; /* Добавляем рамку */
+    margin-bottom: 20px; /* Отступ снизу */
+}
+
+/* Стиль для выбранного адреса и координат */
+h3 {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: #333;
+    margin: 5px 0;
+}
+
+/* Входные элементы и кнопки */
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #007BFF;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Для мобильных устройств — карта и входные элементы */
+@@media (max-width: 600px) {
+    #map {
+        height: 300px;
+    }
+    
+    input[type="text"],
+    button {
+        font-size: 14px;
+    }
+}
+</style> *@

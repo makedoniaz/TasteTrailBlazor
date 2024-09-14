@@ -12,19 +12,20 @@
 
 @code {
     private VenueCreateDto venue = new VenueCreateDto();
-    private StreamContent? _logoStream;
+    private Stream? _logoStream;
     private string? _logoFileName;
 
 
-    private void OnFileSelected(ChangeEventArgs e)
+private void OnFileSelected(InputFileChangeEventArgs  e)
+    { 
+
+         var files = e.File;
+    if (files != null)
     {
-        var files = e.Value as IReadOnlyList<IBrowserFile>;
-        if (files != null && files.Count > 0)
-        {
-            var file = files[0];
-            _logoFileName = file.Name;
-            _logoStream = new StreamContent(file.OpenReadStream());
-        }
+        _logoFileName = files.Name;
+       _logoStream  = files.OpenReadStream();
+ 
+     }
     }
 
     protected override async Task OnInitializedAsync()
@@ -61,15 +62,7 @@
             }
 
             try
-            {
-                @* if (selectedLogo != null)
-{
-bool uploadSuccess = await IVenueService.UploadVenueLogoAsync(venue.Id, selectedLogo);
-if (!uploadSuccess)
-{
-Console.WriteLine($"Error upload Logos: {uploadSuccess}");
-} *@
-
+            { 
                 var result = await IVenueService.CreateVenueAsync(venue, _logoStream!, _logoFileName!);
                 if (result)
                 {
@@ -95,17 +88,7 @@ Console.WriteLine($"Error upload Logos: {uploadSuccess}");
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
-                <div class="custom-file">
-                    <label class="input-file">
-                        <input type="file" class="input-file" name="file"
-                            @onchange="@(async e => OnFileSelected(e))">
-                        <span class="input-file-btn">Выберите файл</span>
-                        <span class="input-file-text">Максимум 10мб</span>
-                    </label>
-                    @* <label class="custom-file-label" for="logo">Upload Logo</label>
-                    <input type="file" class="form-control custom-file-input file"
-                    @onchange="@(async e => await OnFileSelected(e))" /> *@
-                </div>
+                 <InputFile OnChange="OnFileSelected" />  
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>

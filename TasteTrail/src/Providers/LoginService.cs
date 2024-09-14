@@ -39,48 +39,60 @@ public class LoginService
         this._httpClientFactory = httpClientFactory;
     }
 
-    public async Task<bool> LoginAsync(LoginDto loginDto)
+    public async Task<string> LoginAsync(LoginDto loginDto)
     {
-        var httpClient = this._httpClientFactory.CreateClient("AuthPolicy");
-        var response = await httpClient.PostAsJsonAsync("/api/Authentication/Login", loginDto);
-
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var accessToken = await response.Content.ReadFromJsonAsync<AccessToken>();
+            var httpClient = this._httpClientFactory.CreateClient("AuthPolicy");
+            var response = await httpClient.PostAsJsonAsync("/api/Authentication/Login", loginDto);
 
-            await this._localStorage.SetItemAsStringAsync(AccessToken, accessToken!.Jwt!);
-            await this._localStorage.SetItemAsStringAsync(
-                RefreshToken,
-                accessToken!.Refresh!.ToString()
-            );
+            if (response.IsSuccessStatusCode)
+            {
+                var accessToken = await response.Content.ReadFromJsonAsync<AccessToken>();
 
-            this._navigation.NavigateTo("/");
-            return true;
+                await this._localStorage.SetItemAsStringAsync(AccessToken, accessToken!.Jwt!);
+                await this._localStorage.SetItemAsStringAsync(
+                    RefreshToken,
+                    accessToken!.Refresh!.ToString()
+                );
+
+                this._navigation.NavigateTo("/");
+                return null;
+            }
+            else
+            {
+                return "Login failed. Please check your credentials.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Login failed. Please check your credentials.");
-            return false;
+            return ex.Message;
         }
     }
 
-    public async Task<bool> RegisterAsync(RegistrationDto registrationDto)
+    public async Task<string> RegisterAsync(RegistrationDto registrationDto)
     {
-        var httpClient = this._httpClientFactory.CreateClient("AuthPolicy");
-        var response = await httpClient.PostAsJsonAsync(
-            "/api/Authentication/Registration",
-            registrationDto
-        );
+        try
+        {
+            var httpClient = this._httpClientFactory.CreateClient("AuthPolicy");
+            var response = await httpClient.PostAsJsonAsync(
+                "/api/Authentication/Registration",
+                registrationDto
+            );
 
-        if (response.IsSuccessStatusCode)
-        {
-            this._navigation.NavigateTo("/Login");
-            return true;
+            if (response.IsSuccessStatusCode)
+            {
+                this._navigation.NavigateTo("/Login");
+                return null;
+            }
+            else
+            {
+                return "Registration failed. Please try again.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Registration failed. Please try again.");
-            return false;
+            return ex.Message;
         }
     }
 
@@ -128,59 +140,55 @@ public class LoginService
                 if (accessTokenResult == null)
                 {
                     Console.WriteLine("Failed to read access token from response.");
+                    await LogoutAsync();
                     return emptyResult;
                 }
 
-                if (accessTokenResult != null)
-                {
-                    await _localStorage.SetItemAsStringAsync(AccessToken, accessTokenResult!.Jwt!);
-                    await _localStorage.SetItemAsStringAsync(
-                        RefreshToken,
-                        accessTokenResult.Refresh.ToString()
-                    );
-                    claims = JwtTokenHelper.ValidateDecodeToken(
-                        accessTokenResult.Jwt,
-                        this._configuration
-                    );
-                    return claims;
-                }
-                else
-                {
-                    await LogoutAsync();
-                }
+                await _localStorage.SetItemAsStringAsync(AccessToken, accessTokenResult!.Jwt!);
+                await _localStorage.SetItemAsStringAsync(
+                    RefreshToken,
+                    accessTokenResult.Refresh.ToString()
+                );
+                claims = JwtTokenHelper.ValidateDecodeToken(
+                    accessTokenResult.Jwt,
+                    this._configuration
+                );
+                return claims;
             }
             else
             {
                 await LogoutAsync();
+                return emptyResult;
             }
-            return claims;
         }
         else
         {
             await LogoutAsync();
+            return emptyResult;
         }
-        return claims;
     }
 
     public async Task LogoutAsync()
     {
-        var token = await this._localStorage.GetItemAsStringAsync("jwt");
-        var refreshToken = await this._localStorage.GetItemAsStringAsync("refresh");
-        var httpClient = this._httpClientFactory.CreateClient("AuthPolicy");
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            token
-        );
         try
         {
+            var token = await this._localStorage.GetItemAsStringAsync(AccessToken);
+            var refreshToken = await this._localStorage.GetItemAsStringAsync(RefreshToken);
+            var httpClient = this._httpClientFactory.CreateClient("AuthPolicy");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Bearer",
+                token
+            );
             var response = await httpClient.PatchAsJsonAsync(
                 "/api/Authentication/Logout",
                 refreshToken
             );
         }
         catch { }
-
-        await RemoveAuthDataFromStorageAsync(); 
+        finally
+        {
+            await RemoveAuthDataFromStorageAsync();
+        }
     }
 
     private async Task RemoveAuthDataFromStorageAsync()

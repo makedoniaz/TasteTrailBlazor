@@ -11,15 +11,16 @@
 <PageTitle>Venue Details</PageTitle>
 
 @code {
-    Map.LoadParameters mapParams;
-    int pageNumber = 1;
-    int pageSize = 10;
+    private  Map.LoadParameters mapParams;
+    private int pageNumber = 1;
+    private int pageSize = 10;
+    private bool isLoading = true;
 
     public class VenueViewModel
     {
         public Venue? Venue { get; set; }
         public MenuDto? Menus { get; set; } = new MenuDto();
-        public FeedbackDto? Feedbacks { get; set; } = new FeedbackDto(); 
+        public FeedbackDto? Feedbacks { get; set; } = new FeedbackDto();
     }
 
     private FilterType selectedFilter = FilterType.MostLiked;
@@ -44,6 +45,8 @@
     {
         try
         {
+            isLoading = true;
+
             Model.Venue = await IVenueService.GetVenueByIdAsync(Id);
 
             if (Model.Venue != null)
@@ -70,18 +73,23 @@
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
         }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private FeedbackCreateDto feedback { get; set; }
     private int selectedEmoji = 0;
     private bool isEditMode = false;
- 
+
     private void SelectEmoji(int emojiValue)
     {
         selectedEmoji = emojiValue;
         feedback.Rating = emojiValue;
-    } 
- 
+    }
+
     private async Task SubmitFeedback()
     {
         if (string.IsNullOrWhiteSpace(feedback.Text))
@@ -93,40 +101,40 @@
 
         if (isEditMode)
         {
-            
-        feedback.VenueId = Id;
+
+            feedback.VenueId = Id;
             var response = await IFeedbackService.CreateFeedbackAsync(feedback);
-             Console.WriteLine($"Feedback updated: {feedback.Text}, Rating: {feedback.Rating}");
+            Console.WriteLine($"Feedback updated: {feedback.Text}, Rating: {feedback.Rating}");
         }
         else
         {
-            
+
             feedback.VenueId = Id;
             var response = await IFeedbackService.CreateFeedbackAsync(feedback);
             Console.WriteLine($"Feedback submitted: {feedback.Text}, Rating: {feedback.Rating}");
         }
- 
+
         ResetForm();
     }
-    
-     private string GetEmojiClass(int emojiValue)
+
+    private string GetEmojiClass(int emojiValue)
     {
-        return selectedEmoji == emojiValue ? "selected-emoji" : string.Empty;
+        return selectedEmoji == emojiValue ? "emoji selected-emoji" : "emoji";
     }
 
-    private void ResetForm()
+    private async Task ResetForm()
     {
-        feedback = new FeedbackCreateDto();
+        Model.Feedbacks = await IFeedbackService.GetFilteredFeedbacksAsync(Id, selectedFilter, pageNumber, pageSize);
         selectedEmoji = 0;
         isEditMode = false;
     }
 
-     private void CancelEdit()
+    private void CancelEdit()
     {
         ResetForm();
     }
 
-     public void EditFeedback(FeedbackCreateDto existingFeedback)
+    public void EditFeedback(FeedbackCreateDto existingFeedback)
     {
         feedback = existingFeedback;
         selectedEmoji = existingFeedback.Rating;
@@ -139,7 +147,7 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-4">
-             <img src="@Model!.Venue!.LogoUrlPath" class="d-block w-100 " alt="Venue Photo">
+            <img src="@Model!.Venue!.LogoUrlPath" class="d-block w-100 " alt="Venue Photo">
         </div>
         <div class="col-md-8">
             <h1 class="mb-3">@Model!.Venue!.Name</h1>
@@ -208,8 +216,8 @@
     <!-- <div class="mt-5">
         <h2>Reviews</h2>
         <div class="list-group" style="position: relative;">
-            @foreach (var feedback in Model!.Feedbacks!.Entities)
-            {
+    @foreach (var feedback in Model!.Feedbacks!.Entities)
+    {
                 <div class="list-group-item d-flex align-items-start">
                     <img src="/images/user.png" class="rounded-circle me-3" alt="Alice's logo" style="width: 50px;">
                     <div>
@@ -235,89 +243,87 @@
 
                     </div>
                 </div>
-            }
+    }
             <button type="button" class="btn btn-primary btn-lg rounded-circle" id="addFeedbackBtn"
                 style="position: absolute; bottom: -10px; right: -15px;"><i class="fas fa-plus"></i> </button>
         </div>
 
     </div> -->
 
-    <div class="mt-5" id="commentFormSection"> 
+    <div class="mt-5" id="commentFormSection">
         <EditForm class="feedback-card" Model="feedback" OnValidSubmit="SubmitFeedback">
-            <h2>How are you feeling today?</h2>
-            <p>Your input is valuable in helping us better understand your needs and tailor our service accordingly.</p>
+            <h2>How was your dining experience today?</h2>
+            <p>Your feedback is important to us! It helps us enhance our service and deliver an unforgettable experience
+                every time you visit.</p>
 
-            <div class="emojis"> 
-                <span @onclick="() => SelectEmoji(1)" class="emoji @GetEmojiClass(1)">😢</span>
-                <span @onclick="() => SelectEmoji(2)" class="emoji @GetEmojiClass(2)">😞</span>
-                <span @onclick="() => SelectEmoji(3)" class="emoji @GetEmojiClass(3)">😐</span>
-                <span @onclick="() => SelectEmoji(4)" class="emoji @GetEmojiClass(4)">🙂</span>
-                <span @onclick="() => SelectEmoji(5)" class="emoji @GetEmojiClass(5)">🥰</span>
-    
+            <div class="emojis">
+                <span @onclick="() => SelectEmoji(1)" class="@GetEmojiClass(1)">😢</span>
+                <span @onclick="() => SelectEmoji(2)" class="@GetEmojiClass(2)">😞</span>
+                <span @onclick="() => SelectEmoji(3)" class="@GetEmojiClass(3)">😐</span>
+                <span @onclick="() => SelectEmoji(4)" class="@GetEmojiClass(4)">🙂</span>
+                <span @onclick="() => SelectEmoji(5)" class="@GetEmojiClass(5)">🥰</span>
             </div>
 
             <InputTextArea class="comment-box" placeholder="Add or edit comment..." @bind-Value="feedback.Text" />
 
 
             <button type="submit" class="submit-btn">
-            @if (isEditMode)
-            {
-                <span>Update Feedback</span>
-            }
-            else
-            {
-                <span>Submit Now</span>
-            }
+                @if (isEditMode)
+                {
+                    <span>Update Feedback</span>
+                }
+                else
+                {
+                    <span>Submit Now</span>
+                }
             </button>
 
             @if (isEditMode)
             {
                 <button type="button" class="cancel-btn" @onclick="CancelEdit">Cancel</button>
             }
-        </EditForm> 
+        </EditForm>
         <div class="feedbacks-card">
-        <h2>Reviews</h2>
-        <div class="list-group" style="position: relative;">
-        @if(Model!.Feedbacks!.Entities.Count() == 0)
-        {
-            <div class="no-cards">
-            <p>No Feedbacks available at the moment. <span class="emoji">😞</span></p>
-        </div>
-        }
-        else{
-            @foreach (var feedback in Model!.Feedbacks!.Entities)
-            {
-                <div class="list-group-item d-flex align-items-start">
-                    <img src="/images/user.png" class="rounded-circle me-3" alt="Alice's logo" style="width: 50px;">
-                    <div>
-                        <h5 class="mb-1">@feedback.Username</h5>
-                        <div class="rating" data-rating="feedback.Rating">
-                            <span class="text-warning">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </span>
-                            <span class="badge bg-secondary ms-2">@feedback.Rating</span>
-                        </div>
-                        <p class="mb-1">@feedback.Text</p>
-                        <small class="text-muted">Posted on feedback.CreationDate</small>
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary edit-feedback">
-                                Edit <i class="fas fa-pencil-alt"></i>
-                            </button>
-                        </div>
+            <h2>Reviews</h2>
+            <div class="list-group" style="position: relative;">
+                @if (Model!.Feedbacks!.Entities.Count() == 0)
+                {
+                    <div class="no-cards">
+                        <p>No Feedbacks available at the moment. <span class="emoji">😞</span></p>
                     </div>
-                </div>
-            }
-            <button type="button" class="btn btn-primary btn-lg rounded-circle" id="addFeedbackBtn" style="position: absolute; bottom: -10px; right: -15px;">
-                <i class="fas fa-plus"></i>
-            </button>
-        }
+                }
+                else
+                {
+                    @foreach (var feedback in Model!.Feedbacks!.Entities)
+                    {
+                            <div class="feedback-box  d-flex align-items-start">
+                            <img src="/images/user.png" class="rounded-circle me-3" alt="Alice's logo" style="width: 50px;">
+                            <div class="justify-content-start">
+                                <h5 class="mb-1">@feedback.Username</h5>
+                                <div class="rating" data-rating="feedback.Rating">
+                                    <span class="text-warning">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </span>
+                                    <span class="badge bg-secondary ms-2">@feedback.Rating</span>
+                                </div>
+                                <p class="mb-1">@feedback.Text</p>
+                                <small class="text-muted">Posted on @feedback.CreationDate</small>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary edit-feedback">
+                                        Edit <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
         </div>
-        </div>
-    </div>  
+    </div>
 </div>
 
 <style>
@@ -331,13 +337,14 @@
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
- 
+
 
 <style>
     img {
-    max-width: 100%;
-    height: auto;
-}
+        max-width: 100%;
+        height: auto;
+    }
+
     .container {
         margin-bottom: 250px;
     }
@@ -400,6 +407,7 @@
         text-align: right;
         width: 24%;
     }
+
     .no-cards {
         text-align: center;
         margin-top: 20px;
@@ -409,98 +417,106 @@
         font-size: 18px;
         color: #888;
     }
+
     #commentFormSection {
-    display: flex;
-    gap: 20px;  
-}
+        display: flex;
+        gap: 20px;
+    }
 
-.feedback-card, .feedbacks-card {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    padding: 25px;
-    text-align: center;
-    margin: 10px;
-    flex: 1;  
-}
+    .feedback-card,
+    .feedbacks-card,
+    .feedback-box {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+        text-align: center;
+        margin: 10px;
+        flex: 1;
+    }
 
-.feedback-card {
-    flex: 1;  
-    height: 450px;  
+    .feedback-box 
+    {
+        padding: auto;
+        min-height: 50px;
+    }
 
-}
+    .feedback-card {
+        flex: 1;
+        height: 450px;
 
-.feedbacks-card {
-    flex: 2; 
- }
+    }
 
-.feedback-card h2 {
-    margin-block-end: 15px;
-    color: #333333;
-}
+    .feedbacks-card {
+        flex: 2;
+    }
 
-.feedback-card p {
-    color: #585758;
-    font-size: 15px;
-    margin-block-end: 30px;
-}
+    .feedback-card h2 {
+        margin-block-end: 15px;
+        color: #333333;
+    }
 
-.emojis {
-    transition: transform 0.6s, color 0.6s;
-    display: flex;
-    justify-content: space-between;
-    margin-block-end: 20px;
-}
+    .feedback-card p {
+        color: #585758;
+        font-size: 15px;
+        margin-block-end: 30px;
+    }
 
-.emoji {
-    cursor: pointer;
-    font-size: 30px;
-    transition: transform 0.6s, color 0.6s, filter 0.6s;
-    color: #cccccc;
-}
+    .emojis {
+        transition: transform 0.6s, color 0.6s;
+        display: flex;
+        justify-content: space-between;
+        margin-block-end: 20px;
+    }
 
-.emoji:hover {
-    transform: scale(1.3);
-    filter: grayscale(0);
-    color: inherit;
-}
+    .emoji {
+        cursor: pointer;
+        font-size: 30px;
+        transition: transform 0.6s, color 0.6s, filter 0.6s;
+        color: #cccccc;
+    }
 
-.emoji.selected {
-    transform: scale(1.3);
-    color: #03070a;
-}
+    .emoji:hover,
+    .emoji.selected-emoji {
+        transform: scale(1.3);
+        filter: grayscale(0);
+        color: inherit;
+    }
 
-.comment-box {
-    inline-size: calc(100% - 20px);
-    padding: 10px;
-    border: 1px solid #dddddd;
-    border-radius: 8px;
-    margin-block-end: 20px;
-    resize: none;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-}
+    .emoji.selected {
+        transform: scale(1.3);
+        color: #03070a;
+    }
 
-.submit-btn {
-    background: linear-gradient(45deg, #4caf50, #388e3c);
-    color: white;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    inline-size: 100%;
-    font-size: 18px;
-    transition: background-color 1s;
-}
+    .comment-box {
+        inline-size: calc(100% - 20px);
+        padding: 10px;
+        border: 1px solid #dddddd;
+        border-radius: 8px;
+        margin-block-end: 20px;
+        resize: none;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+    }
 
-.submit-btn:hover {
-    background: linear-gradient(-63deg, #03f00f, #2e7d32);
-}
+    .submit-btn {
+        background: linear-gradient(45deg, #4caf50, #388e3c);
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        inline-size: 100%;
+        font-size: 18px;
+        transition: background-color 1s;
+    }
 
-.selected {
-    color: #ffcc00;
-}
+    .submit-btn:hover {
+        background: linear-gradient(-63deg, #03f00f, #2e7d32);
+    }
 
-
+    .selected {
+        color: #ffcc00;
+    }
 </style>

@@ -100,7 +100,7 @@ public class VenueService : IVenueService
 
     public async Task<bool> CreateVenueAsync(
         VenueCreateDto venue,
-        StreamContent logoStream,
+        Stream logoStream,
         string logoFileName
     )
     {
@@ -108,23 +108,21 @@ public class VenueService : IVenueService
         using var formData = new MultipartFormDataContent();
 
         formData.Add(new StringContent(venue.Name ?? string.Empty), nameof(venue.Name));
+        formData.Add(new StringContent(venue.Description ?? string.Empty), nameof(venue.Description));
         formData.Add(new StringContent(venue.Address ?? string.Empty), nameof(venue.Address));
-        formData.Add(
-            new StringContent(venue.Description ?? string.Empty),
-            nameof(venue.Description)
-        );
         formData.Add(new StringContent(venue.Email ?? string.Empty), nameof(venue.Email));
-        formData.Add(
-            new StringContent(venue.ContactNumber ?? string.Empty),
-            nameof(venue.ContactNumber)
-        );
-        formData.Add(new StringContent(venue.AveragePrice.ToString()), nameof(venue.AveragePrice));
+        formData.Add(new StringContent(venue.ContactNumber ?? string.Empty), nameof(venue.ContactNumber));
+        formData.Add(new StringContent(venue.AveragePrice.ToString() ?? string.Empty), nameof(venue.AveragePrice));
 
-        if (logoStream != null && !string.IsNullOrEmpty(logoFileName))
+        if (logoStream != null && logoFileName != null ) 
         {
-            formData.Add(logoStream, "logo", logoFileName);
+            var fileContent = new StreamContent(logoStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");  
+            formData.Add(fileContent, "image", logoFileName);  
         }
-
+  
+        formData.Add(new StringContent(venue.AveragePrice.ToString()), nameof(venue.AveragePrice));
+ 
         var response = await client.PostAsync("/api/Venue/Create", formData);
 
         if (!response.IsSuccessStatusCode)

@@ -23,11 +23,15 @@
         {
             if (authenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
             {
-                await LoginService.LoginAsync(loginDto);
+                var result = await LoginService.LoginAsync(loginDto);
+                if(result != null)
+                {
+                    httpResponseErrorMessage = result;
+                }
             }
             else
             {
-                throw new InvalidOperationException("Authentication provider is not of type JwtAuthenticationStateProvider.");
+                httpResponseErrorMessage = "Authentication provider is not of type JwtAuthenticationStateProvider.";
             } 
         }
         catch (Exception ex)

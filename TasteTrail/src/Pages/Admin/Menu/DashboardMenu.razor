@@ -31,13 +31,13 @@
             var user = authState.User;
 
             var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
-            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             if (!isAuthenticated)
             {
                 NavigationManager.NavigateTo("/");
                 return;
             }
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             isLoading = true;
             try
@@ -58,6 +58,11 @@
                 StateHasChanged();
             }
         }
+    }
+
+    private void CreateMenuItem(int id)
+    { 
+        NavigationManager.NavigateTo($"/MenuItem/Create/{id}", true); 
     }
 
     private async Task Refresh()
@@ -206,6 +211,7 @@
                                 <thead>
                                     <tr>
                                         <th>   
+                                            
                                             <button  @onclick="() => Refresh()">
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>
@@ -225,6 +231,9 @@
                                             <td>
                                                 @if(@userId == @menu!.UserId)
                                                 {
+                                                    <button @onclick="() => CreateMenuItem(menu.Id)" data-bs-toggle="tooltip" data-bs-placement="top" title="Create new Venue">
+                                                <i class="fa-solid fa-plus"></i>
+                                            </button>
                                                     <button style="ml-4" @onclick="() => UpdateMenu(menu.Id)" > <i class="fa-solid fa-pen-to-square"></i></button>
                                                 }
                                             </td>
@@ -275,6 +284,13 @@
     </div>
     
 <style> 
+     th button, td button{
+        margin: 10px;
+    }
+    th button:hover, td button:hover {
+        transition: opacity 0.5s ease-out;
+        opacity: 70%;
+    }   
     th button{
         margin: 10px;
     }

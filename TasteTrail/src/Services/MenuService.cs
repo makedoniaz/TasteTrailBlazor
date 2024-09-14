@@ -132,30 +132,33 @@ public class MenuService : IMenuService
         }
     }
 
-    public async Task<bool> CreateMenuAsync(MenuCreateDto menuDto, StreamContent imageStream, string imageFileName)
+ 
+
+    public async Task<bool> CreateMenuAsync(MenuCreateDto menuDto, Stream imageStream,
+        string logoFileName)
+{
+    var client = await CreateAuthenticatedClientAsync();
+    using var formData = new MultipartFormDataContent();
+ 
+    formData.Add(new StringContent(menuDto.Name ?? string.Empty), nameof(menuDto.Name));
+    formData.Add(new StringContent(menuDto.Description ?? string.Empty), nameof(menuDto.Description));
+    formData.Add(new StringContent(menuDto.VenueId.ToString() ?? string.Empty), nameof(menuDto.VenueId));
+
+    if (imageStream != null)
     {
-        var client = await CreateAuthenticatedClientAsync();
-        using var formData = new MultipartFormDataContent();
-
-        formData.Add(new StringContent(menuDto.Name ?? string.Empty), nameof(menuDto.Name));
-        formData.Add(
-            new StringContent(menuDto.Description ?? string.Empty),
-            nameof(menuDto.Description)
-        ); 
-        if (imageStream != null && !string.IsNullOrEmpty(imageFileName))
-        {
-            formData.Add(imageStream, "image", imageFileName);
-        }
-
-        var response = await client.PostAsJsonAsync("/api/Menu/Create", formData);
-        if (!response.IsSuccessStatusCode)
-        {
-            Console.WriteLine(
-                $"Error creating menu: {response.StatusCode} - {response.ReasonPhrase}"
-            );
-        }
-        return response.IsSuccessStatusCode;
+        var fileContent = new StreamContent(imageStream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg"); // Укажите реальный тип файла
+        formData.Add(fileContent, "image", logoFileName);  
     }
+
+    var response = await client.PostAsync("/api/Menu/Create", formData);
+    if (!response.IsSuccessStatusCode)
+    {
+        Console.WriteLine($"Error creating menu: {response.StatusCode} - {response.ReasonPhrase}");
+    }
+    return response.IsSuccessStatusCode;
+}
+
 
     public async Task<bool> UpdateMenuAsync(MenuDto menuDto)
     {
