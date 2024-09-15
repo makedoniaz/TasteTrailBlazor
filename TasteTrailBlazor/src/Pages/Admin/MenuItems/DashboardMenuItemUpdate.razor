@@ -1,22 +1,28 @@
-﻿@page "/Venue/Create"
+﻿@page "/MenuItem/Update/{Id:int?}"
 @attribute [Authorize(Policy = "AdminOnly")]
-@layout DashBoardLayout
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IVenueService IVenueService
+@inject IMenuService IMenuService
+@inject IMenuItemService IMenuItemService
 
+@layout DashBoardLayout
 
-<PageTitle>Create Venue</PageTitle>
+<PageTitle>Update MenuItem</PageTitle>
 
 @code {
-    private VenueCreateDto venue = new VenueCreateDto();
+    [Parameter]
+    public int Id { get; set; }
+    public Menu? currentMenu { get; set; }
+    private MenuItemUpdateDto menuItem = new MenuItemUpdateDto();
     private Stream? _logoStream;
     private string? _logoFileName;
+    public string? userId { get; set; }
 
     private void OnFileSelected(InputFileChangeEventArgs e)
     {
+
         var files = e.File;
         if (files != null)
         {
@@ -25,7 +31,6 @@
 
         }
     }
-
     protected override async Task OnInitializedAsync()
     {
         try
@@ -38,13 +43,36 @@
             {
                 NavigationManager.NavigateTo("/");
             }
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
+            var result = await IMenuItemService.GetMenuItemByIdAsync(id: Id);
+
+            if (result == null || result.UserId != userId)
+            {
+                NavigationManager.NavigateTo("/DashboardMenus");
+            }
+
+            currentMenu = await IMenuService.GetMenuByIdAsync(result.MenuId);
+
+            if (result.UserId != userId)
+            {
+                Console.WriteLine($"Exception message: {userId}");
+            }
+            menuItem = new MenuItemUpdateDto
+                {
+                    Id = Id,
+                    Name = result.Name,
+                    Description = result.Description,
+                    Price = result.Price
+
+                };
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Exception message: {ex.Message}");
         }
     }
-    private async Task CreateVenueAsync()
+
+    private async Task UpdateMenuItemAsync()
     {
         if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
         {
@@ -61,18 +89,17 @@
 
             try
             {
-                var result = await IVenueService.CreateVenueAsync(venue, _logoStream!, _logoFileName!);
+                var result = await IMenuItemService.UpdateMenuItemAsync(menuItem, _logoStream!, _logoFileName);
                 if (result)
                 {
-                    NavigationManager.NavigateTo("/DashboardVenues");
+                    NavigationManager.NavigateTo("/DashboardMenuItems");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading venues: {ex.Message}");
+                Console.WriteLine($"Error loading menus: {ex.Message}");
             }
         }
-
 
     }
 
@@ -81,8 +108,8 @@
     <div class="row mb-3">
         <div class="container ">
 
-            <EditForm Model="venue" OnValidSubmit="CreateVenueAsync" class="createForm" enctype="multipart/form-data">
-                <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Create new Venue</h1>
+            <EditForm Model="menuItem" OnValidSubmit="UpdateMenuItemAsync" class="updateForm" menuItem>
+                <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Update new MenuItem</h1>
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
@@ -90,51 +117,36 @@
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>
-                    <InputText id="name" class="form-control custom-file-input" placeholder="Input Venue Name..."
-                        @bind-Value="venue.Name" />
-                    <ValidationMessage For="@(() => venue.Name)" />
-                </div>
-
-                <div class="custom-file">
-                    <label class="custom-file-label" for="address">Address</label>
-                    <InputText id="address" class="form-control custom-file-input" placeholder="Input Venue Address..."
-                        @bind-Value="venue.Address" />
-                    <ValidationMessage For="@(() => venue.Address)" />
+                    <InputText id="name" class="form-control custom-file-input" placeholder="Input MenuItem Name..."
+                        @bind-Value="menuItem.Name" />
+                    <ValidationMessage For="@(() => menuItem.Name)" />
                 </div>
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="description">Description</label>
                     <InputTextArea id="description" class="form-control custom-file-input"
-                        placeholder="Input Venue Description..." @bind-Value="venue.Description" />
-                    <ValidationMessage For="@(() => venue.Description)" />
+                        placeholder="Input MenuItem Description..." @bind-Value="menuItem.Description" />
+                    <ValidationMessage For="@(() => menuItem.Description)" />
                 </div>
 
                 <div class="custom-file">
-                    <label class="custom-file-label" for="contactNumber">Contact Number</label>
-                    <InputText id="contactNumber" class="form-control custom-file-input"
-                        placeholder="Input Venue ContactNumber..." @bind-Value="venue.ContactNumber" />
-                    <ValidationMessage For="@(() => venue.ContactNumber)" />
+                    <label class="custom-file-label" for="price"> Price</label>
+                    <InputNumber id="price" class="form-control custom-file-input" placeholder="Input Price..."
+                        @bind-Value="menuItem.Price" />
+                    <ValidationMessage For="@(() => menuItem.Price)" />
                 </div>
 
                 <div class="custom-file">
-                    <label class="custom-file-label" for="email">Email</label>
-                    <InputText id="email" class="form-control custom-file-input" placeholder="Input Venue Email..."
-                        @bind-Value="venue.Email" />
-                    <ValidationMessage For="@(() => venue.Email)" />
-                </div>
-
-                <div class="custom-file">
-                    <label class="custom-file-label" for="averagePrice">Average Price</label>
-                    <InputNumber id="averagePrice" class="form-control custom-file-input"
-                        placeholder="Input Average Price..." @bind-Value="venue.AveragePrice" />
-                    <ValidationMessage For="@(() => venue.AveragePrice)" />
+                    <label class="custom-file-label" for="menu">Selected Menu Name</label>
+                    <InputTextArea id="menu" class="form-control custom-file-input" placeholder="Your Input"
+                        @bind-Value="currentMenu!.Name" disabled />
                 </div>
 
                 <button type="submit" <span>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                         <path fill="none" d="M0 0h24v24H0z"></path>
                         <path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"></path>
-                    </svg> Create
+                    </svg> Update
                     </span>
                 </button>
 
@@ -144,7 +156,7 @@
 </div>
 
 <style>
-    .createForm {
+    .updateForm {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-weight: 500;
         margin: 15px auto;
@@ -156,12 +168,12 @@
         justify-items: center;
     }
 
-    .createForm .custom-file {
+    .updateForm .custom-file {
         margin-bottom: 15px;
         position: relative;
     }
 
-    .createForm .custom-file label {
+    .updateForm .custom-file label {
         display: block;
         margin-bottom: 5px;
         font-weight: bold;
@@ -169,7 +181,7 @@
 
     }
 
-    .createForm .custom-file-input {
+    .updateForm .custom-file-input {
         width: 100%;
         font-size: 16px;
 
@@ -184,12 +196,12 @@
         box-shadow: 0px 0px 20px -18px;
     }
 
-    .createForm .input-file {
+    .updateForm .input-file {
         position: relative;
         display: inline-block;
     }
 
-    .createForm .input-file span {
+    .updateForm .input-file span {
         position: relative;
         display: inline-block;
         cursor: pointer;
@@ -211,12 +223,12 @@
         width: 300px;
     }
 
-    .createForm .input-file {
+    .updateForm .input-file {
         position: relative;
         display: inline-block;
     }
 
-    .createForm .input-file-btn {
+    .updateForm .input-file-btn {
         position: relative;
         display: inline-block;
         cursor: pointer;
@@ -237,13 +249,13 @@
         transition: background-color 0.2s;
     }
 
-    .createForm .input-file-text {
+    .updateForm .input-file-text {
         padding: 0 10px;
         line-height: 40px;
         display: inline-block;
     }
 
-    .createForm .input-file input[type=file] {
+    .updateForm .input-file input[type=file] {
         position: absolute;
         z-index: -1;
         opacity: 0;
@@ -252,23 +264,23 @@
         height: 0;
     }
 
-    .createForm .input-file input[type=file]:focus+.input-file-btn {
+    .updateForm .input-file input[type=file]:focus+.input-file-btn {
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
     }
 
-    .createForm .input-file:hover .input-file-btn {
+    .updateForm .input-file:hover .input-file-btn {
         background-color: #59be6e;
     }
 
-    .createForm .input-file:active .input-file-btn {
+    .updateForm .input-file:active .input-file-btn {
         background-color: #2E703A;
     }
 
-    .createForm .input-file input[type=file]:disabled+.input-file-btn {
+    .updateForm .input-file input[type=file]:disabled+.input-file-btn {
         background-color: #eee;
     }
 
-    .createForm button {
+    .updateForm button {
         min-width: 200px;
         border: 2px solid #940534;
         background-color: #940534;
@@ -278,7 +290,7 @@
         font-size: 14px;
     }
 
-    .createForm button span {
+    .updateForm button span {
         font-size: 16px;
         display: flex;
         justify-content: center;
@@ -287,7 +299,7 @@
         font-weight: 600;
     }
 
-    .createForm button:hover {
+    .updateForm button:hover {
         background-color: #68122c;
     }
 </style>

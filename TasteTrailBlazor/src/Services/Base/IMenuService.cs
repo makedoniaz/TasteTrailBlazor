@@ -10,6 +10,6 @@ public interface IMenuService
     Task<Menu?> GetMenuByIdAsync(int id);
     Task<List<Menu>?> GetMenusFromToAsync(int from, int to, int venueId);
     Task<bool> CreateMenuAsync(MenuCreateDto menuDto, Stream imageStream, string logoFileName);
-    Task<bool> UpdateMenuAsync(MenuDto menuDto);
+    Task<bool> UpdateMenuAsync(MenuUpdateDto menuDto, Stream imageStream, string logoFileName);
     Task<bool> DeleteMenuAsync(int id);
 }

@@ -42,6 +42,7 @@
                 NavigationManager.NavigateTo("/");
                 return;
             }
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             isLoading = true;
             try
@@ -149,9 +150,12 @@
         <div class="row mb-3">
             <div class="searchcontainer"> 
                 <select @onchange="HandleChange">
-                    @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
+                     @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
                     {
-                        <option value="@filter">@SplitCamelCase(filter.ToString())</option>
+                         if(filter == FilterType.MostLiked || filter == FilterType.OldestFirst || filter == FilterType.NewestFirst || filter == FilterType.HighestRated || filter == FilterType.LowestRated || filter == FilterType.NoFilter )
+                        {
+                            <option value="@filter">@SplitCamelCase(filter.ToString())</option>
+                        }
                     }
                 </select>
                 <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for feedbacks..."

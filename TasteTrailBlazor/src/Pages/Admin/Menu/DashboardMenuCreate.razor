@@ -20,16 +20,16 @@
     private string? _logoFileName;
     public string? userId { get; set; }
 
-    private void OnFileSelected(InputFileChangeEventArgs  e)
-    { 
-
-         var files = e.File;
-    if (files != null)
+    private void OnFileSelected(InputFileChangeEventArgs e)
     {
-        _logoFileName = files.Name;
-       _logoStream  = files.OpenReadStream();
- 
-     }
+
+        var files = e.File;
+        if (files != null)
+        {
+            _logoFileName = files.Name;
+            _logoStream = files.OpenReadStream();
+
+        }
     }
     protected override async Task OnInitializedAsync()
     {
@@ -47,18 +47,16 @@
 
             currentVenue = await IVenueService.GetVenueByIdAsync(id: Id);
 
-             if (currentVenue == null || currentVenue!.UserId != userId)
+            if (currentVenue == null || currentVenue!.UserId != userId)
             {
-                            Console.WriteLine($"Exception message: {userId}");
-                            Console.WriteLine($"Exception message: {currentVenue!.UserId}");
-
-               // NavigationManager.NavigateTo("/DashboardVenues");
+                Console.WriteLine($"Exception message: {userId}");
+                Console.WriteLine($"Exception message: {currentVenue!.UserId}");
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Exception message: {ex.Message}");
-        } 
+        }
     }
     private async Task CreateMenuAsync()
     {
@@ -77,7 +75,7 @@
 
             try
             {
-                menuCreateDto.VenueId = Id; 
+                menuCreateDto.VenueId = Id;
                 var result = await IMenuService.CreateMenuAsync(menuCreateDto, _logoStream!, _logoFileName);
                 if (result)
                 {
@@ -98,20 +96,21 @@
     <div class="row mb-3">
         <div class="container ">
 
-            <EditForm Model="menuCreateDto" OnValidSubmit="CreateMenuAsync" class="createForm" menuItem>
+            <EditForm Model="menuCreateDto" OnValidSubmit="CreateMenuAsync" class="createForm"  >
                 <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Create new Menu</h1>
                 <DataAnnotationsValidator />
                 <ValidationSummary />
- 
-                 @* <div class="custom-file">
-                    <label class="input-file">
-                        <input type="file" class="input-file" name="file"
-                            @onchange="@(async e => OnFileSelected(e))">
-                        <span class="input-file-btn">Выберите файл</span>
-                        <span class="input-file-text">Максимум 10мб</span>
-                    </label> 
+
+                @* <div class="custom-file">
+                <label class="input-file">
+                <input type="file" class="input-file" name="file"
+                @onchange="@(async e => OnFileSelected(e))">
+                <span class="input-file-btn">Выберите файл</span>
+                <span class="input-file-text">Максимум 10мб</span>
+                </label>
                 </div> *@
-<InputFile OnChange="OnFileSelected" />                <div class="custom-file">
+                <InputFile OnChange="OnFileSelected" />
+                <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>
                     <InputText id="name" class="form-control custom-file-input" placeholder="Input Menu name..."
                         @bind-Value="menuCreateDto.Name" />

@@ -113,16 +113,17 @@ public class VenueService : IVenueService
         formData.Add(new StringContent(venue.Email ?? string.Empty), nameof(venue.Email));
         formData.Add(new StringContent(venue.ContactNumber ?? string.Empty), nameof(venue.ContactNumber));
         formData.Add(new StringContent(venue.AveragePrice.ToString() ?? string.Empty), nameof(venue.AveragePrice));
+        formData.Add(new StringContent(venue.Longtitude.ToString() ?? string.Empty), nameof(venue.Longtitude));
+        formData.Add(new StringContent(venue.Latitude.ToString() ?? string.Empty), nameof(venue.Latitude));
 
-        if (logoStream != null && logoFileName != null ) 
+        if (logoStream != null ) 
         {
             var fileContent = new StreamContent(logoStream);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");  
-            formData.Add(fileContent, "image", logoFileName);  
+            formData.Add(fileContent, "logo", logoFileName);  
         }
-  
-        formData.Add(new StringContent(venue.AveragePrice.ToString()), nameof(venue.AveragePrice));
- 
+        Console.WriteLine($"Server responded with error: {logoStream}");
+
         var response = await client.PostAsync("/api/Venue/Create", formData);
 
         if (!response.IsSuccessStatusCode)
@@ -142,13 +143,39 @@ public class VenueService : IVenueService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> UpdateVenueAsync(Venue venueDto)
+    public async Task<bool> UpdateVenueAsync(VenueUpdateDto venue,  Stream logoStream, string logoFileName)
     {
-        var client = await CreateAuthenticatedClientAsync();
-        var response = await client.PutAsJsonAsync("/api/Venue/Update", venueDto);
+         var client = await CreateAuthenticatedClientAsync();
+        using var formData = new MultipartFormDataContent();
 
-        return response.IsSuccessStatusCode;
-    }
+        formData.Add(new StringContent(venue.Id.ToString() ?? string.Empty), nameof(venue.Id));
+        formData.Add(new StringContent(venue.Name ?? string.Empty), nameof(venue.Name));
+        formData.Add(new StringContent(venue.Description ?? string.Empty), nameof(venue.Description));
+        formData.Add(new StringContent(venue.Address ?? string.Empty), nameof(venue.Address));
+        formData.Add(new StringContent(venue.Email ?? string.Empty), nameof(venue.Email));
+        formData.Add(new StringContent(venue.ContactNumber ?? string.Empty), nameof(venue.ContactNumber));
+        formData.Add(new StringContent(venue.AveragePrice.ToString() ?? string.Empty), nameof(venue.AveragePrice));
+        formData.Add(new StringContent(venue.Longtitude.ToString() ?? string.Empty), nameof(venue.Longtitude));
+        formData.Add(new StringContent(venue.Latitude.ToString() ?? string.Empty), nameof(venue.Latitude));
+        
+        if (logoStream != null ) 
+        {
+            var fileContent = new StreamContent(logoStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");  
+            formData.Add(fileContent, "logo", logoFileName);  
+        }
+        Console.WriteLine($"Server responded with error: {logoStream}");
+
+        var response = await client.PutAsync("/api/Venue/Update", formData);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Server responded with error: {responseContent}");
+        }
+
+        return response.IsSuccessStatusCode; 
+     }
 
     public async Task<bool> UploadVenueLogoAsync(int venueId, IBrowserFile logo)
     {

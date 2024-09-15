@@ -119,7 +119,7 @@ public class MenuItemService : IMenuItemService
 
     public async Task<bool> CreateMenuItemAsync(
         MenuItemCreateDto menuItemDto,
-        StreamContent imageStream,
+        Stream imageStream,
         string imageFileName
     )
     {
@@ -132,13 +132,21 @@ public class MenuItemService : IMenuItemService
             nameof(menuItemDto.Description)
         );
         formData.Add(new StringContent(menuItemDto.Price.ToString()), nameof(menuItemDto.Price));
-
-        if (imageStream != null && !string.IsNullOrEmpty(imageFileName))
+        formData.Add(new StringContent(menuItemDto.MenuId.ToString()), nameof(menuItemDto.MenuId));
+        
+        Console.WriteLine(menuItemDto.Name);
+        Console.WriteLine(menuItemDto.Description);
+        Console.WriteLine(menuItemDto.MenuId);
+        Console.WriteLine(imageStream);
+            
+        if (imageStream != null)
         {
-            formData.Add(imageStream, "image", imageFileName);
+            var fileContent = new StreamContent(imageStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            formData.Add(fileContent, "logo", imageFileName);
         }
 
-        var response = await client.PostAsJsonAsync("/api/MenuItem/Create", menuItemDto);
+        var response = await client.PostAsync("/api/MenuItem/Create", formData);
         if (!response.IsSuccessStatusCode)
         {
             Console.WriteLine(
@@ -148,10 +156,34 @@ public class MenuItemService : IMenuItemService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> UpdateMenuItemAsync(MenuItemDto menuItemDto)
+    public async Task<bool> UpdateMenuItemAsync(
+        MenuItemUpdateDto menuItemDto,
+        Stream imageStream,
+        string imageFileName
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
-        var response = await client.PutAsJsonAsync("/api/MenuItem/Update", menuItemDto);
+        using var formData = new MultipartFormDataContent();
+
+        formData.Add(
+            new StringContent(menuItemDto.Id.ToString() ?? string.Empty),
+            nameof(menuItemDto.Id)
+        );
+        formData.Add(new StringContent(menuItemDto.Name ?? string.Empty), nameof(menuItemDto.Name));
+        formData.Add(
+            new StringContent(menuItemDto.Description ?? string.Empty),
+            nameof(menuItemDto.Description)
+        );
+        formData.Add(new StringContent(menuItemDto.Price.ToString()), nameof(menuItemDto.Price));
+
+        if (imageStream != null)
+        {
+            var fileContent = new StreamContent(imageStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            formData.Add(fileContent, "logo", imageFileName);
+        }
+
+        var response = await client.PutAsync("/api/MenuItem/Update", formData);
         if (!response.IsSuccessStatusCode)
         {
             Console.WriteLine(

@@ -244,7 +244,7 @@ else
                                             <button @onclick="() => CreateVenue()" data-bs-toggle="tooltip" data-bs-placement="top" title="Create new Venue">
                                                 <i class="fa-solid fa-plus"></i>
                                             </button>
-                                            <button  @onclick="() => Refresh()">
+                                            <button  @onclick="() => Refresh()" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Refresh" >
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>
                                         </th>
@@ -266,10 +266,10 @@ else
                                             <td>
                                                 @if(@userId == @venue!.UserId)
                                                 {
-                                                <button @onclick="() => CreateMenu(venue.Id)" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Create new Venue">
+                                                <button @onclick="() => CreateMenu(venue.Id)" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Create new Menu">
                                                     <i class="fa-regular fa-square-plus"></i>
                                                 </button>
-                                                <button class="ml-4" @onclick="() => UpdateVenue(venue.Id)" > 
+                                                <button class="ml-4" @onclick="() => UpdateVenue(venue.Id)" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Edit Venue" > 
                                                     <i class="fa-solid fa-pen-to-square"></i>
                                                 </button>
                                                 }

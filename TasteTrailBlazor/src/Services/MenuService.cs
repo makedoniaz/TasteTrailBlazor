@@ -132,38 +132,65 @@ public class MenuService : IMenuService
         }
     }
 
- 
-
-    public async Task<bool> CreateMenuAsync(MenuCreateDto menuDto, Stream imageStream,
-        string logoFileName)
-{
-    var client = await CreateAuthenticatedClientAsync();
-    using var formData = new MultipartFormDataContent();
- 
-    formData.Add(new StringContent(menuDto.Name ?? string.Empty), nameof(menuDto.Name));
-    formData.Add(new StringContent(menuDto.Description ?? string.Empty), nameof(menuDto.Description));
-    formData.Add(new StringContent(menuDto.VenueId.ToString() ?? string.Empty), nameof(menuDto.VenueId));
-
-    if (imageStream != null)
-    {
-        var fileContent = new StreamContent(imageStream);
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg"); // Укажите реальный тип файла
-        formData.Add(fileContent, "image", logoFileName);  
-    }
-
-    var response = await client.PostAsync("/api/Menu/Create", formData);
-    if (!response.IsSuccessStatusCode)
-    {
-        Console.WriteLine($"Error creating menu: {response.StatusCode} - {response.ReasonPhrase}");
-    }
-    return response.IsSuccessStatusCode;
-}
-
-
-    public async Task<bool> UpdateMenuAsync(MenuDto menuDto)
+    public async Task<bool> CreateMenuAsync(
+        MenuCreateDto menuDto,
+        Stream imageStream,
+        string logoFileName
+    )
     {
         var client = await CreateAuthenticatedClientAsync();
-        var response = await client.PutAsJsonAsync("/api/Menu/Update", menuDto);
+        using var formData = new MultipartFormDataContent();
+
+        formData.Add(new StringContent(menuDto.Name ?? string.Empty), nameof(menuDto.Name));
+        formData.Add(
+            new StringContent(menuDto.Description ?? string.Empty),
+            nameof(menuDto.Description)
+        );
+        formData.Add(
+            new StringContent(menuDto.VenueId.ToString() ?? string.Empty),
+            nameof(menuDto.VenueId)
+        );
+
+        if (imageStream != null)
+        {
+            var fileContent = new StreamContent(imageStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            formData.Add(fileContent, "image", logoFileName);
+        }
+
+        var response = await client.PostAsync("/api/Menu/Create", formData);
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine(
+                $"Error creating menu: {response.StatusCode} - {response.ReasonPhrase}"
+            );
+        }
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UpdateMenuAsync(
+        MenuUpdateDto menuDto,
+        Stream imageStream,
+        string logoFileName
+    )
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        using var formData = new MultipartFormDataContent();
+
+        formData.Add(new StringContent(menuDto.Id.ToString() ?? string.Empty), nameof(menuDto.Id));
+        formData.Add(new StringContent(menuDto.Name ?? string.Empty), nameof(menuDto.Name));
+        formData.Add(new StringContent(menuDto.Description ?? string.Empty), nameof(menuDto.Description));
+        formData.Add(new StringContent(menuDto.UserId ?? string.Empty), nameof(menuDto.UserId));
+        formData.Add(new StringContent(menuDto.VenueId.ToString() ?? string.Empty),nameof(menuDto.VenueId));
+
+        if (imageStream != null)
+        {
+            var fileContent = new StreamContent(imageStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            formData.Add(fileContent, "image", logoFileName);
+        }  
+
+        var response = await client.PutAsync("/api/Menu/Update", formData);
         if (!response.IsSuccessStatusCode)
         {
             Console.WriteLine(

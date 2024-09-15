@@ -212,7 +212,7 @@
                                     <tr>
                                         <th>   
                                             
-                                            <button  @onclick="() => Refresh()">
+                                            <button  @onclick="() => Refresh()" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Refresh" >
                                                 <i class="fa-solid fa-arrows-rotate"></i>
                                             </button>
                                         </th>
@@ -231,10 +231,12 @@
                                             <td>
                                                 @if(@userId == @menu!.UserId)
                                                 {
-                                                    <button @onclick="() => CreateMenuItem(menu.Id)" data-bs-toggle="tooltip" data-bs-placement="top" title="Create new Venue">
-                                                <i class="fa-solid fa-plus"></i>
-                                            </button>
-                                                    <button style="ml-4" @onclick="() => UpdateMenu(menu.Id)" > <i class="fa-solid fa-pen-to-square"></i></button>
+                                                    <button @onclick="() => CreateMenuItem(menu.Id)" data-bs-toggle="tooltip" data-bs-placement="top" title="Create new Menu Item">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                    <button style="ml-4" @onclick="() => UpdateMenu(menu.Id)" data-bs-toggle="tooltip" data-bs-placement="Bottom" title="Edit Menu" >
+                                                        <i class="fa-solid fa-pen-to-square"></i>
+                                                    </button>
                                                 }
                                             </td>
                                             <td @onclick="() => GoToDetails(menu.Id)">

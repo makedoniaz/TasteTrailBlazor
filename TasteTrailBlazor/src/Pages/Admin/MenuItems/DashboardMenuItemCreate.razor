@@ -4,6 +4,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IMenuService IMenuService
 @inject IMenuItemService IMenuItemService
 
 @layout DashBoardLayout
@@ -13,9 +14,23 @@
 @code {
     [Parameter]
     public int Id { get; set; }
+    public Menu? currentMenu { get; set; }
+    private MenuItemCreateDto menuItem = new MenuItemCreateDto();
+    private Stream? _logoStream;
+    private string? _logoFileName;
+    public string? userId { get; set; }
 
-    private MenuItemCreateDto menuItem = new MenuItemCreateDto(); 
- 
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+
+        var files = e.File;
+        if (files != null)
+        {
+            _logoFileName = files.Name;
+            _logoStream = files.OpenReadStream();
+
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         try
@@ -28,20 +43,30 @@
             {
                 NavigationManager.NavigateTo("/");
             }
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
+
+            currentMenu = await IMenuService.GetMenuByIdAsync(id: Id);
+
+            if (currentMenu == null || currentMenu!.UserId != userId)
+            {
+                Console.WriteLine($"Exception message: {userId}");
+                Console.WriteLine($"Exception message: {currentMenu!.UserId}");
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Exception message: {ex.Message}");
         }
     }
+   
     private async Task CreateMenuItemAsync()
     {
-        if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+       if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
         {
             var authState = await jwtProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            var isAuthenticated = user!.Identity!.IsAuthenticated && user!.IsInRole("Admin");
+            var isAuthenticated = user!.Identity!.IsAuthenticated && user.IsInRole("Admin");
 
             if (!isAuthenticated)
             {
@@ -50,19 +75,19 @@
             }
 
             try
-            { 
-                //var result = await IMenuItemService.CreateMenuItemAsync(menuItem);
-                @* if (result)
+            {
+                menuItem.MenuId = Id;
+                var result = await IMenuItemService.CreateMenuItemAsync(menuItem, _logoStream!, _logoFileName);
+                if (result)
                 {
                     NavigationManager.NavigateTo("/DashboardMenuItems");
-                } *@
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading menuItems: {ex.Message}");
+                Console.WriteLine($"Error loading menus: {ex.Message}");
             }
         }
-
 
     }
 
@@ -74,28 +99,36 @@
             <EditForm Model="menuItem" OnValidSubmit="CreateMenuItemAsync" class="createForm" menuItem>
                 <h1 style="font-size: 1.5rem; font-weight: 600;" class="mb-5">Create new MenuItem</h1>
                 <DataAnnotationsValidator />
-                <ValidationSummary /> 
+                <ValidationSummary />
+
+                <InputFile OnChange="OnFileSelected" />
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>
                     <InputText id="name" class="form-control custom-file-input" placeholder="Input MenuItem Name..."
                         @bind-Value="menuItem.Name" />
                     <ValidationMessage For="@(() => menuItem.Name)" />
-                </div> 
+                </div>
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="description">Description</label>
                     <InputTextArea id="description" class="form-control custom-file-input"
                         placeholder="Input MenuItem Description..." @bind-Value="menuItem.Description" />
                     <ValidationMessage For="@(() => menuItem.Description)" />
-                </div> 
+                </div>
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="price"> Price</label>
-                    <InputNumber id="price" class="form-control custom-file-input"
-                        placeholder="Input Price..." @bind-Value="menuItem.Price" />
+                    <InputNumber id="price" class="form-control custom-file-input" placeholder="Input Price..."
+                        @bind-Value="menuItem.Price" />
                     <ValidationMessage For="@(() => menuItem.Price)" />
-                </div>  
+                </div>
+
+                <div class="custom-file">
+                    <label class="custom-file-label" for="menu">Selected Menu Name</label>
+                    <InputTextArea id="menu" class="form-control custom-file-input" placeholder="Your Input"
+                        @bind-Value="currentMenu!.Name" disabled />
+                </div>
 
                 <button type="submit" <span>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -105,7 +138,7 @@
                     </span>
                 </button>
 
-            </EditForm> 
+            </EditForm>
         </div>
     </div>
 </div>
@@ -218,17 +251,19 @@
         width: 0;
         height: 0;
     }
- 
+
     .createForm .input-file input[type=file]:focus+.input-file-btn {
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
-    } 
+    }
+
     .createForm .input-file:hover .input-file-btn {
         background-color: #59be6e;
     }
 
     .createForm .input-file:active .input-file-btn {
         background-color: #2E703A;
-    } 
+    }
+
     .createForm .input-file input[type=file]:disabled+.input-file-btn {
         background-color: #eee;
     }
@@ -258,21 +293,21 @@
 </style>
 
 <script>
-     document.addEventListener('DOMContentLoaded', function () {
-    const fileInput = document.querySelector('.input-file input[type=file]');
-    const fileNameSpan = document.querySelector('.input-file-text');
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.querySelector('.input-file input[type=file]');
+        const fileNameSpan = document.querySelector('.input-file-text');
         console.log(111);
         console.log(fileInput);
         console.log(fileNameSpan);
 
-    if (fileInput && fileNameSpan) {
-        fileInput.addEventListener('change', function () {
-            const file = this.files[0];
-            if (file) {
-                fileNameSpan.textContent = file.name;
-            }
-        });
-    }
-});
+        if (fileInput && fileNameSpan) {
+            fileInput.addEventListener('change', function () {
+                const file = this.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name;
+                }
+            });
+        }
+    });
 
 </script>

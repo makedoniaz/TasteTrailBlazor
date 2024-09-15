@@ -16,6 +16,7 @@
     private string searchQuery = string.Empty;
     private bool isLoading = true;
     private FilterType selectedFilter = FilterType.NoFilter;
+    public string? userId { get; set; }
 
     public static string SplitCamelCase(string input)
 {
@@ -42,6 +43,8 @@
                 NavigationManager.NavigateTo("/");
                 return;
             }
+            
+            userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
 
             isLoading = true;
             try
@@ -156,7 +159,10 @@
                 <select @onchange="HandleChange">
                     @foreach (var filter in Enum.GetValues(typeof(FilterType)).Cast<FilterType>())
                     {
-                        <option value="@filter">@SplitCamelCase(filter.ToString())</option>
+                         if(filter == FilterType.MostLiked || filter == FilterType.NoFilter )
+                        {
+                            <option value="@filter">@SplitCamelCase(filter.ToString())</option>
+                        }
                     }
                 </select>
                 <input type="text" @bind="searchQuery" class="form-control" placeholder="Search for menuItems..."
@@ -244,7 +250,13 @@ else
                                     @foreach (var menuItem in menuItemDto!.Entities!)
                                     {
                                         <tr>
-                                            <td><button style="ml-4" @onclick="() => UpdateMenuItem(menuItem.Id)" > <i class="fa-solid fa-pen-to-square"></i></button></td>
+                                            <td>
+                                                @if(@userId == @menuItem!.UserId)
+                                                {
+                                                    <button style="ml-4" @onclick="() => UpdateMenuItem(menuItem.Id)" > <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                }
+                                                </td>
                                             <td @onclick="() => GoToDetails(menuItem.Id)">
                                                 <img src="@menuItem!.ImageUrlPath" alt="MenuItem Avatar" class="rounded-circle"
                                                     width="50" height="50" />

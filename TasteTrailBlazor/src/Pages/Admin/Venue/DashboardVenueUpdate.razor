@@ -15,19 +15,20 @@
 
     [Parameter]
     public int Id { get; set; }
-    private VenueCreateDto venue = new VenueCreateDto();
-    private StreamContent? _logoStream;
+    private VenueUpdateDto venue = new VenueUpdateDto();
+    private Stream? _logoStream;
     private string? _logoFileName;
 
 
-    private void OnFileSelected(ChangeEventArgs e)
+    private void OnFileSelected(InputFileChangeEventArgs e)
     {
-        var files = e.Value as IReadOnlyList<IBrowserFile>;
-        if (files != null && files.Count > 0)
+
+        var files = e.File;
+        if (files != null)
         {
-            var file = files[0];
-            _logoFileName = file.Name;
-            _logoStream = new StreamContent(file.OpenReadStream());
+            _logoFileName = files.Name;
+            _logoStream = files.OpenReadStream();
+
         }
     }
 
@@ -43,6 +44,25 @@
             {
                 NavigationManager.NavigateTo("/");
             }
+            var userId = user!.FindFirst(ClaimTypes.NameIdentifier)!.Value!;
+            var result = await IVenueService.GetVenueByIdAsync(Id);
+
+            if (result == null || result.UserId != userId)
+            {
+                NavigationManager.NavigateTo("/DashboardVenues");
+            } 
+
+            venue = new VenueUpdateDto
+                {
+                    Id = Id,
+                    Name = result.Name,
+                    Address = result.Address,
+                    Description = result.Description,
+                    ContactNumber = result.ContactNumber,
+                    Email = result.Email,
+                    AveragePrice = result.AveragePrice
+                };
+
         }
         catch (Exception ex)
         {
@@ -66,19 +86,13 @@
 
             try
             {
-                @* if (selectedLogo != null)
-{
-bool uploadSuccess = await IVenueService.UploadVenueLogoAsync(venue.Id, selectedLogo);
-if (!uploadSuccess)
-{
-Console.WriteLine($"Error upload Logos: {uploadSuccess}");
-} *@
+                var result = await IVenueService.UpdateVenueAsync(venue,_logoStream, _logoFileName);
+                Console.WriteLine(result);
+                if(result)
+                {
+                    NavigationManager.NavigateTo("/DashboardVenues");  
+                }
 
-                @* var result = await IVenueService.UpdateVenueAsync(venue, _logoStream, _logoFileName);
-if (result)
-{
-NavigationManager.NavigateTo("/DashboardVenues");
-} *@
             }
             catch (Exception ex)
             {
@@ -99,17 +113,8 @@ NavigationManager.NavigateTo("/DashboardVenues");
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
-                <div class="custom-file">
-                    <label class="input-file">
-                        <input type="file" class="input-file" name="file"
-                            @onchange="@(async e => OnFileSelected(e))">
-                        <span class="input-file-btn">Select file </span>
-                        <span class="input-file-text">Max 10 mb</span>
-                    </label>
-                    @* <label class="custom-file-label" for="logo">Upload Logo</label>
-                    <input type="file" class="form-control custom-file-input file"
-                    @onchange="@(async e => await OnFileSelected(e))" /> *@
-                </div>
+                <InputFile OnChange="OnFileSelected" />
+
 
                 <div class="custom-file">
                     <label class="custom-file-label" for="name">Name</label>
@@ -322,15 +327,15 @@ NavigationManager.NavigateTo("/DashboardVenues");
         const fileInput = document.querySelector('.input-file');
         const fileNameSpan = document.querySelector('.input-file-text');
         console.log(fileInput);
-        console.log(fileNameSpan); 
+        console.log(fileNameSpan);
 
-            fileInput.addEventListener('click', function () {
+        fileInput.addEventListener('click', function () {
 
-                const file = this.files[0];
-                if (file) {
-                    fileNameSpan.textContent = file.name;
-                }
-            }); 
+            const file = this.files[0];
+            if (file) {
+                fileNameSpan.textContent = file.name;
+            }
+        });
     });
 
 </script>

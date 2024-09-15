@@ -12,6 +12,6 @@ public interface IVenueService
     Task<int> GetVenueCountAsync();
     Task<bool> CreateVenueAsync(VenueCreateDto venue, Stream logoStream, string logoFileName);
     Task<bool> DeleteVenueByIdAsync(int id);
-    Task<bool> UpdateVenueAsync(Venue venueDto);
+    Task<bool> UpdateVenueAsync(VenueUpdateDto venueDto, Stream logoStream, string logoFileName);
     Task<bool> UploadVenueLogoAsync(int venueId, IBrowserFile logo);
 }
